@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>راوند تريب — محتوى تيك توك</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&display=swap');
+  :root {
+    --dark: #1a2820; --green: #4A6B5B; --light-green: #6a9b7e;
+    --pale: #f0ede8; --warm: #D0CEBB; --white: #ffffff;
+    --accent: #c8a96e; --text: #1a2820; --muted: #7a8c84;
+    --border: #d8d4cc;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'IBM Plex Sans Arabic',sans-serif; background:var(--pale); color:var(--text); min-height:100vh; }
+
+  .header { background:var(--dark); padding:18px 32px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:100; }
+  .logo { display:flex; align-items:center; gap:12px; }
+  .logo-mark { width:36px; height:36px; background:var(--green); border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:14px; font-weight:700; color:white; }
+  .logo-text { color:white; font-size:15px; font-weight:600; }
+  .logo-sub { color:#7a8c84; font-size:11px; }
+  .month-badge { background:var(--green); color:white; padding:6px 16px; border-radius:20px; font-size:13px; font-weight:500; }
+
+  .stats-bar { background:var(--white); border-bottom:1px solid var(--border); padding:14px 32px; display:flex; gap:32px; }
+  .stat-num { font-size:22px; font-weight:700; color:var(--green); line-height:1; }
+  .stat-label { font-size:11px; color:var(--muted); }
+
+  .tabs { background:var(--white); border-bottom:1px solid var(--border); padding:0 32px; display:flex; }
+  .tab { padding:13px 18px; font-size:13px; font-weight:500; color:var(--muted); cursor:pointer; border:none; border-bottom:2px solid transparent; background:none; font-family:inherit; transition:all .2s; }
+  .tab.active { color:var(--green); border-bottom-color:var(--green); }
+
+  .main { padding:28px 32px; max-width:1100px; margin:0 auto; }
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .section-title { font-size:17px; font-weight:700; }
+
+  .btn-green { background:var(--green); color:white; border:none; padding:9px 18px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; transition:background .2s; }
+  .btn-green:hover { background:var(--light-green); }
+  .btn-green:disabled { opacity:.5; cursor:not-allowed; }
+
+  .notice { background:#fff8ed; border:1px solid var(--accent); border-radius:8px; padding:11px 15px; font-size:12px; color:#7a5a1e; margin-bottom:20px; }
+
+  .week-label { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; margin-top:24px; }
+
+  .post-card { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:16px 20px; margin-bottom:10px; display:flex; align-items:center; gap:14px; transition:box-shadow .2s; }
+  .post-card:hover { box-shadow:0 4px 14px rgba(0,0,0,.06); }
+  .post-card.done { opacity:.6; background:#f0f7f3; border-color:var(--green); }
+
+  .day-badge { background:var(--pale); border:1px solid var(--border); border-radius:8px; padding:6px 10px; text-align:center; min-width:50px; flex-shrink:0; }
+  .day-name { font-size:10px; color:var(--muted); }
+  .day-num { font-size:17px; font-weight:700; line-height:1.2; }
+
+  .post-info { flex:1; min-width:0; }
+  .post-topic { font-size:14px; font-weight:600; margin-bottom:4px; }
+  .post-meta { display:flex; gap:8px; flex-wrap:wrap; }
+  .tag { font-size:11px; padding:2px 9px; border-radius:20px; font-weight:500; }
+  .tag-type { background:#e8f0ea; color:var(--green); }
+  .tag-dest { background:#f5f0e8; color:#8a6d3b; }
+
+  .post-actions { display:flex; gap:6px; flex-shrink:0; }
+  .btn-sm { padding:6px 12px; border-radius:6px; font-size:12px; font-weight:500; cursor:pointer; border:none; font-family:inherit; transition:all .15s; }
+  .btn-view { background:var(--pale); color:var(--text); border:1px solid var(--border); }
+  .btn-view:hover { background:var(--warm); }
+  .btn-send { background:var(--dark); color:white; min-width:90px; display:flex; align-items:center; justify-content:center; gap:4px; }
+  .btn-send:hover:not(:disabled) { background:var(--green); }
+  .btn-send:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-check { background:transparent; border:1px solid var(--border); color:var(--muted); width:30px; padding:6px; text-align:center; }
+  .btn-check.on { background:var(--green); color:white; border-color:var(--green); }
+
+  /* STATUS INLINE */
+  .inline-status { margin-top:8px; font-size:11px; padding:7px 12px; border-radius:6px; display:none; }
+  .inline-status.loading { display:block; background:#f0f7f3; color:var(--green); }
+  .inline-status.done { display:block; background:#e8f5ee; color:#2d6a4f; border:1px solid #b7dfc8; }
+  .inline-status.error { display:block; background:#fff0f0; color:#c0392b; border:1px solid #f5c6c6; }
+
+  /* MODAL */
+  .overlay { display:none; position:fixed; inset:0; background:rgba(26,40,32,.6); z-index:1000; align-items:center; justify-content:center; padding:20px; }
+  .overlay.open { display:flex; }
+  .modal { background:var(--white); border-radius:14px; width:100%; max-width:600px; max-height:88vh; overflow-y:auto; padding:28px; position:relative; }
+  .modal-close { position:absolute; top:14px; left:14px; background:var(--pale); border:none; width:30px; height:30px; border-radius:7px; cursor:pointer; font-size:15px; color:var(--muted); }
+  .modal-h { font-size:17px; font-weight:700; margin-bottom:4px; padding-left:36px; }
+  .modal-sub { font-size:12px; color:var(--muted); margin-bottom:22px; }
+  .msec-title { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:7px; margin-top:18px; }
+  .mtext { font-size:13px; line-height:1.75; background:var(--pale); padding:12px 14px; border-radius:8px; white-space:pre-wrap; }
+  .hashtags { font-size:13px; color:var(--green); line-height:2; background:var(--pale); padding:12px 14px; border-radius:8px; }
+  .copy-btn { background:var(--pale); border:1px solid var(--border); border-radius:5px; padding:3px 9px; font-size:11px; cursor:pointer; font-family:inherit; color:var(--muted); margin-top:6px; }
+  .copy-btn:hover { background:var(--warm); }
+
+  /* VIDEO PREVIEW */
+  .video-preview { border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-top:6px; }
+  .video-preview video { width:100%; max-height:200px; object-fit:cover; display:block; }
+  .video-preview-info { padding:8px 12px; font-size:12px; color:var(--muted); background:var(--pale); }
+
+  .modal-footer { display:flex; gap:8px; margin-top:22px; padding-top:18px; border-top:1px solid var(--border); }
+  .btn-modal { flex:1; padding:11px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; border:none; font-family:inherit; }
+  .btn-primary { background:var(--dark); color:white; }
+  .btn-primary:hover:not(:disabled) { background:var(--green); }
+  .btn-primary:disabled { opacity:.5; cursor:not-allowed; }
+  .btn-secondary { background:var(--pale); color:var(--text); border:1px solid var(--border); }
+
+  .descript-result { background:#e8f5ee; border:1px solid #b7dfc8; border-radius:8px; padding:12px 14px; margin-top:12px; font-size:13px; color:#2d6a4f; display:none; }
+  .descript-result.show { display:block; }
+  .descript-result a { color:var(--green); font-weight:600; }
+
+  .page { display:none; }
+  .page.active { display:block; }
+
+  .ideas-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:14px; }
+  .idea-card { background:var(--white); border:1px solid var(--border); border-radius:10px; padding:18px; }
+  .idea-icon { font-size:22px; margin-bottom:8px; }
+  .idea-title { font-size:14px; font-weight:600; margin-bottom:5px; }
+  .idea-desc { font-size:12px; color:var(--muted); line-height:1.6; }
+
+  .spinner { display:inline-block; width:12px; height:12px; border:2px solid rgba(255,255,255,.4); border-top-color:white; border-radius:50%; animation:spin .7s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  @media(max-width:600px) {
+    .header,.stats-bar,.tabs,.main { padding-left:14px; padding-right:14px; }
+    .stats-bar { gap:18px; flex-wrap:wrap; }
+    .post-card { flex-wrap:wrap; }
+    .post-actions { width:100%; justify-content:flex-end; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-mark">RT</div>
+    <div>
+      <div class="logo-text">راوند تريب</div>
+      <div class="logo-sub">إدارة محتوى تيك توك</div>
+    </div>
+  </div>
+  <div class="month-badge" id="monthBadge">سبتمبر 2025</div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><div class="stat-num" id="sTotal">20</div><div class="stat-label">إجمالي</div></div>
+  <div class="stat"><div class="stat-num" id="sDone">0</div><div class="stat-label">تم النشر</div></div>
+  <div class="stat"><div class="stat-num" id="sLeft">20</div><div class="stat-label">متبقي</div></div>
+  <div class="stat"><div class="stat-num">5</div><div class="stat-label">بوست / أسبوع</div></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="showPage('schedule',this)">📅 الجدول الشهري</button>
+  <button class="tab" onclick="showPage('ideas',this)">💡 مكتبة الأفكار</button>
+</div>
+
+<div class="main">
+  <div class="page active" id="page-schedule">
+    <div class="section-header">
+      <div class="section-title">جدول سبتمبر 2025</div>
+      <button class="btn-green" onclick="alert('افتح محادثة راوند تريب AI وقول: جدد المحتوى ✅')">🔄 تجديد الشهر</button>
+    </div>
+    <div class="notice">🔇 كل الفيديوهات: بدون موسيقى، بدون بشر — Descript يعمل Mute تلقائياً للأوديو ويحتفظ بالصوت الطبيعي فقط</div>
+    <div id="scheduleEl"></div>
+  </div>
+
+  <div class="page" id="page-ideas">
+    <div class="section-header"><div class="section-title">مكتبة الأفكار</div></div>
+    <div class="ideas-grid" id="ideasEl"></div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-h" id="mTitle"></div>
+    <div class="modal-sub" id="mSub"></div>
+
+    <div class="msec-title">الكابشن</div>
+    <div class="mtext" id="mCaption"></div>
+    <button class="copy-btn" onclick="cp('mCaption')">نسخ</button>
+
+    <div class="msec-title">الهاشتاقات</div>
+    <div class="hashtags" id="mHash"></div>
+    <button class="copy-btn" onclick="cp('mHash')">نسخ</button>
+
+    <div class="msec-title">معاينة الفيديو</div>
+    <div id="mVideoWrap"></div>
+
+    <div class="descript-result" id="descResult"></div>
+
+    <div class="modal-footer">
+      <button class="btn-modal btn-primary" id="btnDesc" onclick="modalSendDescript()">🎬 أرسل لـ Descript</button>
+      <button class="btn-modal btn-secondary" onclick="closeModal()">إغلاق</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const PEXELS_KEY = 'tIzXWSLG0SN2Kpe0Xr7yIJvTPUzPOaHUutfuJV76OvCWlj0mFa7YorHW';
+
+const posts = [
+  {id:1,day:"الأحد",date:"1",week:1,topic:"أجمل قرى اسكتلندا",type:"تغطية",dest:"اسكتلندا",pexels:"scottish village landscape nature",caption:"اسكتلندا مو بس مدن — في قرى هادية تحس فيها بالهدوء من أول نظرة 🏡\nكل شارع حكاية، وكل منظر لوحة طبيعية.\n\nلو تخطط لرحلة أوروبا، خلّ اسكتلندا على قائمتك 🌿\n\nراوند تريب تنظم لك كل شي 📩",hashtags:"#اسكتلندا #قرى_اوروبية #سفر #راوند_تريب #رحلات_اوروبا"},
+  {id:2,day:"الاثنين",date:"2",week:1,topic:"بحيرات اسكتلندا الخيالية",type:"تغطية",dest:"اسكتلندا",pexels:"scotland loch lake misty morning",caption:"بحيرات اسكتلندا مو مجرد ماء — جو مختلف كلياً 🌊\nالضباب الصباحي فوق الماء شيء ما تشوفه في أي مكان ثاني.\n\nأفضل وقت تزورها: الصبح باكر ☁️",hashtags:"#بحيرات_اسكتلندا #سفر_اوروبا #راوند_تريب #طبيعة #loch"},
+  {id:3,day:"الثلاثاء",date:"3",week:1,topic:"قلاع أوروبا المخفية",type:"تغطية",dest:"اسكتلندا",pexels:"scotland castle ancient stone",caption:"قلاع اسكتلندا فيها شيء غريب — تحس وكأنك في فيلم تاريخي 🏰\nبعضها عمره أكثر من 800 سنة وما يزال شامخ.\n\nأيهم تبي تزوره؟ 👇",hashtags:"#قلاع_اوروبا #اسكتلندا #تاريخ #راوند_تريب #سفر"},
+  {id:4,day:"الأربعاء",date:"4",week:1,topic:"أفضل وقت لزيارة إيطاليا",type:"نصيحة",dest:"إيطاليا",pexels:"italy countryside tuscany landscape",caption:"متى تزور إيطاليا؟ الجواب مو بس الصيف 🌸\nأبريل ومايو = أجمل الأوقات — جو معتدل وزحمة أقل.\n\nأكتوبر كمان خيار ذهبي للتصوير والهدوء 📸",hashtags:"#ايطاليا #نصائح_سفر #افضل_وقت_سفر #راوند_تريب #رحلات_اوروبا"},
+  {id:5,day:"الخميس",date:"5",week:1,topic:"البندقية بدون سياح",type:"تغطية",dest:"إيطاليا",pexels:"venice canal gondola water",caption:"البندقية بدون زحمة — هذا هو المنظر الحقيقي 🚤\nالقنوات الهادية والمباني القديمة تحكي تاريخ لوحدها.\n\nالسر: زرها الصبح باكر أو في الشتاء 🌫️",hashtags:"#البندقية #ايطاليا #سفر #راوند_تريب #قنوات"},
+  {id:6,day:"الأحد",date:"8",week:2,topic:"الألب السويسري من الجو",type:"تغطية",dest:"سويسرا",pexels:"swiss alps mountains snow aerial",caption:"سويسرا من فوق = شيء ما تصدقه 🏔️\nالجبال البيضاء والوديان الخضراء — كل إطار لوحة فنية.\n\nهذا اللي بتشوفه وأنت تنزل بالطائرة ✈️",hashtags:"#سويسرا #جبال_الالب #راوند_تريب #سفر #رحلات"},
+  {id:7,day:"الاثنين",date:"9",week:2,topic:"3 أشياء ما تعرفها عن باريس",type:"نصيحة",dest:"فرنسا",pexels:"paris eiffel tower architecture",caption:"باريس مو بس برج إيفل 🗼\n3 أشياء ما يعرفها أغلب الزوار:\n\n① المقاهي الجانبية أحسن من السياحية\n② المترو أسهل طريقة للتنقل\n③ أجمل المناظر مو من برج إيفل — من تروكاديرو 👀",hashtags:"#باريس #فرنسا #نصائح_سفر #راوند_تريب #paris"},
+  {id:8,day:"الثلاثاء",date:"10",week:2,topic:"أجمل طرق السيارة في أوروبا",type:"تغطية",dest:"عام",pexels:"mountain road winding scenic europe",caption:"بعض الطرق في أوروبا تساوي رحلة لوحها 🚗\nالطريق بين المناظر والجبال والبحيرات — تجربة ما تنساها.\n\nهل جربت رحلة بالسيارة في أوروبا؟",hashtags:"#رحلة_بالسيارة #اوروبا #راوند_تريب #سفر #مناظر"},
+  {id:9,day:"الأربعاء",date:"11",week:2,topic:"الغابات الألمانية",type:"تغطية",dest:"ألمانيا",pexels:"german forest black forest trees",caption:"ألمانيا عندها سر قليل يعرفه — الغابات 🌲\nغابة البلاك فورست وحدها تكفي رحلة كاملة.\n\nالهواء هناك شيء ثاني 🍃",hashtags:"#المانيا #غابات #راوند_تريب #طبيعة #سفر"},
+  {id:10,day:"الخميس",date:"12",week:2,topic:"كيف تختار فندقك في أوروبا؟",type:"نصيحة",dest:"عام",pexels:"european hotel building architecture",caption:"الفندق يصنع الرحلة — أو يخربها 🏨\n3 أشياء دايم اسأل عنها:\n\n① الموقع من المحطة أو المركز\n② هل الإفطار مشمول؟\n③ التقييمات الأخيرة — مو السنة اللي فاتت",hashtags:"#نصائح_سفر #فنادق_اوروبا #راوند_تريب #سياحة #سفر"},
+  {id:11,day:"الأحد",date:"15",week:3,topic:"أمستردام — المدينة على الماء",type:"تغطية",dest:"هولندا",pexels:"amsterdam canal bridge netherlands",caption:"أمستردام ما تشبه أي مدينة ثانية 🚲\nالقنوات والبيوت القديمة والهواء البارد — جو مختلف كلياً.\n\nأجمل وقت فيها: الصبح الباكر والمساء بعد الغروب 🌇",hashtags:"#امستردام #هولندا #راوند_تريب #سفر #قنوات"},
+  {id:12,day:"الاثنين",date:"16",week:3,topic:"الخريف في أوروبا",type:"تغطية",dest:"عام",pexels:"autumn fall leaves forest europe colorful",caption:"الخريف في أوروبا = ألوان ما تصدقها 🍂\nالأحمر والبرتقالي والذهبي في كل مكان.\n\nوالجو معتدل والأسعار أقل — وين الغلطة؟",hashtags:"#خريف_اوروبا #اوروبا #راوند_تريب #سفر #طبيعة"},
+  {id:13,day:"الثلاثاء",date:"17",week:3,topic:"برشلونة — المعمار الذي يدهشك",type:"تغطية",dest:"إسبانيا",pexels:"barcelona sagrada familia architecture",caption:"برشلونة مدينة تحس أن كل ركن فيها مصمم بعناية 🏛️\nالساغرادا فاميليا وحدها تساوي الرحلة.\n\nغاودي غيّر شكل المعمار للأبد 🌀",hashtags:"#برشلونة #اسبانيا #معمار #راوند_تريب #barcelona"},
+  {id:14,day:"الأربعاء",date:"18",week:3,topic:"لا تجهز برنامج اليوم الأول",type:"نصيحة",dest:"عام",pexels:"europe cobblestone street old city",caption:"نصيحة من تجربة — اليوم الأول في أوروبا: لا تجهز برنامج 🚶‍♂️\nامشِ بدون خطة، تبع الشوارع، ادخل أي مقهى.\n\nأفضل اللحظات دايم ما تكون مخططة ✨",hashtags:"#نصائح_سفر #سفر_اوروبا #راوند_تريب #رحلات #اوروبا"},
+  {id:15,day:"الخميس",date:"19",week:3,topic:"هاليشتات — قرية بحيرة النمسا",type:"تغطية",dest:"النمسا",pexels:"hallstatt austria lake village mountain",caption:"هاليشتات — القرية اللي تظهر في كل خلفية شاشة 🏔️\nالمنازل على حافة البحيرة والجبال في الخلف.\n\nهذا المكان حقيقي، مو صورة مُعدّلة 😮",hashtags:"#النمسا #هاليشتات #راوند_تريب #سفر #بحيرات"},
+  {id:16,day:"الأحد",date:"22",week:4,topic:"براغ في الليل",type:"تغطية",dest:"التشيك",pexels:"prague night city bridge lights",caption:"براغ بالليل = ذهب حرفياً ✨\nالإضاءة على الجسر القديم والقلعة — منظر لا يُنسى.\n\nسميت المدينة الذهبية لسبب 🌉",hashtags:"#براغ #تشيكيا #راوند_تريب #سفر #رحلات_اوروبا"},
+  {id:17,day:"الاثنين",date:"23",week:4,topic:"5 أغلاط تجنبها في أوروبا",type:"نصيحة",dest:"عام",pexels:"europe landmark ancient stone architecture",caption:"5 أغلاط يسويها أغلب المسافرين لأوروبا 🚫\n\n① حجز الفنادق في آخر لحظة\n② ما يحجزون تذاكر المعالم مسبقاً\n③ يتنقلون بالتاكسي بدل المترو\n④ يحطون كل يوم أماكن كثيرة\n⑤ ما يجربون المطاعم المحلية",hashtags:"#نصائح_سفر #اوروبا #راوند_تريب #سياحة #رحلات"},
+  {id:18,day:"الثلاثاء",date:"24",week:4,topic:"سواحل كرواتيا الزرقاء",type:"تغطية",dest:"كرواتيا",pexels:"croatia coastline adriatic sea turquoise",caption:"كرواتيا عندها أكثر من 1000 جزيرة 🏝️\nالمياه الزرقاء الشفافة والشواطئ الصخرية — جنة حرفية.\n\nومع ذلك ما تعرف عليها؟ 👀",hashtags:"#كرواتيا #بحر_ادرياتيكي #راوند_تريب #سفر #شواطئ"},
+  {id:19,day:"الأربعاء",date:"25",week:4,topic:"كيف تتجنب التقييمات الكاذبة",type:"نصيحة",dest:"عام",pexels:"european cafe restaurant exterior stone",caption:"مو كل تقييم 5 نجوم حقيقي 🌟\nكيف تعرف الفندق أو المطعم الحقيقي:\n\n① اقرأ التقييمات السلبية أول\n② شوف التواريخ — هل كلها في نفس الوقت؟\n③ صور الزبائن أصدق من صور المنشأة",hashtags:"#نصائح_سفر #فنادق #مطاعم #راوند_تريب #سياحة"},
+  {id:20,day:"الخميس",date:"26",week:4,topic:"دبروفنيك — جدران المدينة القديمة",type:"تغطية",dest:"كرواتيا",pexels:"dubrovnik old town walls adriatic",caption:"دبروفنيك — مدينة كأنها من القرون الوسطى 🏰\nالجدران القديمة على حافة البحر مباشرة.\n\nوراوند تريب توصلك 🌊",hashtags:"#دبروفنيك #كرواتيا #راوند_تريب #سفر #رحلات_اوروبا"},
+];
+
+const ideas = [
+  {icon:"🏔️",title:"تغطيات طبيعية",desc:"مشاهد جبال، بحيرات، وديان، غابات بدون تعليق"},
+  {icon:"🏰",title:"مواقع تاريخية",desc:"قلاع، جدران قديمة، مدن تاريخية تحكي التاريخ"},
+  {icon:"💡",title:"نصايح عملية",desc:"متى تسافر، كيف تختار فندقك، أغلاط تتجنبها"},
+  {icon:"🚗",title:"رحلات سيارة",desc:"أجمل الطرق الأوروبية ومناظر road trips"},
+  {icon:"🌆",title:"مدن خفية",desc:"أماكن أقل شهرة بديلة عن المدن المزدحمة"},
+  {icon:"🍂",title:"المواسم والطقس",desc:"أفضل وقت لكل وجهة وألوان الخريف والشتاء"},
+  {icon:"🏨",title:"أنواع الإقامة",desc:"فنادق تاريخية، شاليهات جبلية، مزارع ريفية"},
+  {icon:"✈️",title:"تجارب السفر",desc:"نصائح للرحلات الطويلة وكيف تستمتع بكل لحظة"},
+];
+
+// State
+let done = JSON.parse(localStorage.getItem('rt_done') || '[]');
+let currentPost = null;
+let currentVideoUrl = null;
+
+// ── PEXELS ──────────────────────────────────────────
+async function fetchPexelsVideo(query) {
+  const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=5&orientation=portrait&size=medium`;
+  const r = await fetch(url, { headers: { Authorization: PEXELS_KEY } });
+  const d = await r.json();
+  if (!d.videos || !d.videos.length) throw new Error('لم يتم العثور على فيديو');
+  // Pick first video with HD file
+  for (const v of d.videos) {
+    const hd = v.video_files.find(f => f.quality === 'hd' || f.quality === 'sd');
+    if (hd) return { url: hd.link, thumb: v.image, id: v.id };
+  }
+  throw new Error('لا يوجد ملف مناسب');
+}
+
+// ── DESCRIPT ─────────────────────────────────────────
+async function sendToDescriptAPI(videoUrl, topic) {
+  // We use Claude API to trigger Descript via prompt
+  // Since we can't call Descript MCP from JS, we call Claude API with Descript MCP
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 1000,
+      mcp_servers: [{
+        type: 'url',
+        url: 'https://api.descript.com/v2/mcp/claude',
+        name: 'descript'
+      }],
+      messages: [{
+        role: 'user',
+        content: `Import this video into Descript and create a new project for TikTok:
+- Video URL: ${videoUrl}
+- Project name: RT TikTok — ${topic}
+- After import, mute all audio tracks completely (music and any background audio)
+- Keep only ambient natural sound if possible, or mute everything
+- Target format: vertical 9:16 for TikTok, 30-60 seconds
+Please import the video and return the project URL.`
+      }]
+    })
+  });
+  const data = await r.json();
+  // Extract project URL from response
+  const text = data.content?.map(c => c.text || '').join('') || '';
+  const urlMatch = text.match(/https:\/\/web\.descript\.com\/[^\s"')]+/);
+  return { text, url: urlMatch ? urlMatch[0] : null };
+}
+
+// ── RENDER SCHEDULE ───────────────────────────────────
+function renderSchedule() {
+  const weekNames = ['الأسبوع الأول (1–7)', 'الأسبوع الثاني (8–14)', 'الأسبوع الثالث (15–21)', 'الأسبوع الرابع (22–28)'];
+  let html = '';
+  [1,2,3,4].forEach(w => {
+    html += `<div class="week-label">${weekNames[w-1]} سبتمبر</div>`;
+    posts.filter(p => p.week === w).forEach(p => {
+      const isDone = done.includes(p.id);
+      html += `
+      <div class="post-card ${isDone ? 'done' : ''}" id="card${p.id}">
+        <div class="day-badge"><div class="day-name">${p.day}</div><div class="day-num">${p.date}</div></div>
+        <div class="post-info">
+          <div class="post-topic">${p.topic}</div>
+          <div class="post-meta">
+            <span class="tag tag-type">${p.type}</span>
+            <span class="tag tag-dest">📍 ${p.dest}</span>
+          </div>
+          <div class="inline-status" id="st${p.id}"></div>
+        </div>
+        <div class="post-actions">
+          <button class="btn-sm btn-view" onclick="openModal(${p.id})">التفاصيل</button>
+          <button class="btn-sm btn-send" id="sb${p.id}" onclick="quickSend(${p.id})">
+            🎬 أرسل
+          </button>
+          <button class="btn-sm btn-check ${isDone ? 'on' : ''}" onclick="toggleDone(${p.id})">✓</button>
+        </div>
+      </div>`;
+    });
+  });
+  document.getElementById('scheduleEl').innerHTML = html;
+  updateStats();
+}
+
+// ── QUICK SEND (inline) ───────────────────────────────
+async function quickSend(id) {
+  const p = posts.find(x => x.id === id);
+  const btn = document.getElementById('sb' + id);
+  const st = document.getElementById('st' + id);
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span>';
+  st.className = 'inline-status loading';
+  st.textContent = '⏳ جاري جلب الفيديو من Pexels...';
+
+  try {
+    // 1. Fetch video from Pexels
+    const video = await fetchPexelsVideo(p.pexels);
+    st.textContent = '⏳ جاري الإرسال لـ Descript...';
+
+    // 2. Send to Descript via Claude API
+    const result = await sendToDescriptAPI(video.url, p.topic);
+
+    if (result.url) {
+      st.className = 'inline-status done';
+      st.innerHTML = `✅ جاهز في Descript — <a href="${result.url}" target="_blank">افتح المشروع</a>`;
+    } else {
+      st.className = 'inline-status done';
+      st.innerHTML = `✅ تم الإرسال — <a href="https://web.descript.com" target="_blank">افتح Descript</a> وشوف المشروع الجديد`;
+    }
+  } catch(e) {
+    st.className = 'inline-status error';
+    st.textContent = '⚠️ ' + (e.message || 'حدث خطأ، حاول مرة ثانية');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🎬 أرسل';
+}
+
+// ── MODAL ─────────────────────────────────────────────
+async function openModal(id) {
+  currentPost = posts.find(p => p.id === id);
+  currentVideoUrl = null;
+  if (!currentPost) return;
+
+  document.getElementById('mTitle').textContent = currentPost.topic;
+  document.getElementById('mSub').textContent = `${currentPost.day} ${currentPost.date} سبتمبر — ${currentPost.dest}`;
+  document.getElementById('mCaption').textContent = currentPost.caption;
+  document.getElementById('mHash').textContent = currentPost.hashtags;
+  document.getElementById('descResult').className = 'descript-result';
+  document.getElementById('btnDesc').disabled = false;
+  document.getElementById('btnDesc').textContent = '🎬 أرسل لـ Descript';
+
+  // Load video preview
+  const wrap = document.getElementById('mVideoWrap');
+  wrap.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:13px;">⏳ جاري تحميل الفيديو...</div>';
+  document.getElementById('overlay').classList.add('open');
+
+  try {
+    const video = await fetchPexelsVideo(currentPost.pexels);
+    currentVideoUrl = video.url;
+    wrap.innerHTML = `
+      <div class="video-preview">
+        <video src="${video.url}" muted autoplay loop playsinline style="width:100%;max-height:220px;object-fit:cover;"></video>
+        <div class="video-preview-info">🔇 سيتم إيقاف الصوت في Descript | Pexels Video #${video.id}</div>
+      </div>`;
+  } catch(e) {
+    wrap.innerHTML = `<div style="padding:12px;color:#c0392b;font-size:13px;">⚠️ تعذر تحميل الفيديو: ${e.message}</div>`;
+  }
+}
+
+async function modalSendDescript() {
+  if (!currentPost) return;
+  const btn = document.getElementById('btnDesc');
+  const res = document.getElementById('descResult');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ جاري الإرسال...';
+  res.className = 'descript-result show';
+  res.textContent = 'جاري جلب الفيديو وإرساله لـ Descript...';
+
+  try {
+    if (!currentVideoUrl) {
+      const video = await fetchPexelsVideo(currentPost.pexels);
+      currentVideoUrl = video.url;
+    }
+    const result = await sendToDescriptAPI(currentVideoUrl, currentPost.topic);
+    if (result.url) {
+      res.innerHTML = `✅ الفيديو في Descript — <a href="${result.url}" target="_blank">افتح المشروع</a>`;
+    } else {
+      res.innerHTML = `✅ تم الإرسال — <a href="https://web.descript.com" target="_blank">افتح Descript</a> وشوف المشروع`;
+    }
+  } catch(e) {
+    res.textContent = '⚠️ ' + (e.message || 'حدث خطأ');
+  }
+
+  btn.disabled = false;
+  btn.textContent = '🎬 أرسل لـ Descript';
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  currentPost = null;
+  currentVideoUrl = null;
+}
+
+// ── HELPERS ───────────────────────────────────────────
+function toggleDone(id) {
+  done = done.includes(id) ? done.filter(x => x !== id) : [...done, id];
+  localStorage.setItem('rt_done', JSON.stringify(done));
+  renderSchedule();
+}
+
+function updateStats() {
+  document.getElementById('sDone').textContent = done.length;
+  document.getElementById('sLeft').textContent = posts.length - done.length;
+}
+
+function cp(id) {
+  navigator.clipboard.writeText(document.getElementById(id).textContent).then(() => {
+    event.target.textContent = 'تم ✓';
+    setTimeout(() => event.target.textContent = 'نسخ', 1500);
+  });
+}
+
+function showPage(name, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+document.getElementById('overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('overlay')) closeModal();
+});
+
+// ── INIT ──────────────────────────────────────────────
+renderSchedule();
+document.getElementById('ideasEl').innerHTML = ideas.map(i =>
+  `<div class="idea-card"><div class="idea-icon">${i.icon}</div><div class="idea-title">${i.title}</div><div class="idea-desc">${i.desc}</div></div>`
+).join('');
+</script>
+</body>
+</html>

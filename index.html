@@ -145,6 +145,7 @@
 <div class="tabs">
   <button class="tab active" onclick="showPage('schedule',this)">📅 الجدول الشهري</button>
   <button class="tab" onclick="showPage('ideas',this)">💡 مكتبة الأفكار</button>
+  <button class="tab" onclick="showPage('sounds',this)">🔊 الأصوات الطبيعية</button>
 </div>
 
 <div class="main">
@@ -161,6 +162,16 @@
     <div class="section-header"><div class="section-title">مكتبة الأفكار</div></div>
     <div class="ideas-grid" id="ideasEl"></div>
   </div>
+
+  <div class="page" id="page-sounds">
+    <div class="section-header">
+      <div class="section-title">مكتبة الأصوات الطبيعية</div>
+      <div style="font-size:12px;color:var(--muted);">كل الأصوات بدون موسيقى — للمصمم يستخدمها في المونتاج</div>
+    </div>
+
+    <div id="soundsGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;"></div>
+  </div>
+
 </div>
 
 <!-- MODAL -->
@@ -440,16 +451,127 @@ function cp(id) {
   });
 }
 
+let soundsLoaded = false;
 function showPage(name, el) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
   el.classList.add('active');
+  if (name === 'sounds' && !soundsLoaded) { soundsLoaded = true; renderSounds(); }
 }
 
 document.getElementById('overlay').addEventListener('click', e => {
   if (e.target === document.getElementById('overlay')) closeModal();
 });
+
+
+// ── SOUNDS DATA ───────────────────────────────────────
+const soundCategories = [
+  {
+    icon: '🌊', title: 'بحر وأمواج',
+    queries: ['ocean waves', 'sea waves shore', 'waves crashing beach']
+  },
+  {
+    icon: '🌧️', title: 'مطر',
+    queries: ['rain falling', 'heavy rain nature', 'light rain drops']
+  },
+  {
+    icon: '🌲', title: 'غابة وطيور',
+    queries: ['forest birds morning', 'birds chirping nature', 'woodland ambience']
+  },
+  {
+    icon: '💨', title: 'رياح',
+    queries: ['wind blowing nature', 'mountain wind', 'gentle breeze']
+  },
+  {
+    icon: '🏔️', title: 'جبال وطبيعة',
+    queries: ['mountain stream water', 'river flowing', 'waterfall nature']
+  },
+  {
+    icon: '❄️', title: 'ثلج وشتاء',
+    queries: ['snow ambience winter', 'winter wind cold', 'blizzard snow']
+  },
+  {
+    icon: '🌿', title: 'ريف هادي',
+    queries: ['countryside ambience', 'rural nature sounds', 'farm nature peaceful']
+  },
+  {
+    icon: '🌙', title: 'ليل',
+    queries: ['night crickets nature', 'night ambience outdoor', 'evening insects']
+  },
+];
+
+async function fetchSounds(query) {
+  const url = `http://187.127.84.160:8080/pexels-proxy/videos/search?query=${encodeURIComponent(query)}&per_page=3&orientation=portrait`;
+  try {
+    const r = await fetch(url, { headers: { Authorization: PEXELS_KEY } });
+    const d = await r.json();
+    return d.videos || [];
+  } catch(e) { return []; }
+}
+
+async function renderSounds() {
+  const grid = document.getElementById('soundsGrid');
+  grid.innerHTML = soundCategories.map((cat, i) => `
+    <div class="idea-card" id="scat${i}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+        <span style="font-size:20px;">${cat.icon}</span>
+        <span style="font-size:14px;font-weight:600;">${cat.title}</span>
+      </div>
+      <div id="sounds${i}" style="font-size:12px;color:var(--muted);">⏳ جاري التحميل...</div>
+    </div>
+  `).join('');
+
+  // Load each category
+  for (let i = 0; i < soundCategories.length; i++) {
+    const cat = soundCategories[i];
+    const el = document.getElementById('sounds' + i);
+    try {
+      // Search Pexels for videos with these queries and use their audio
+      const query = cat.queries[0];
+      const url = `http://187.127.84.160:8080/pexels-proxy/audio/search?query=${encodeURIComponent(query)}&per_page=4`;
+      const r = await fetch(url, { headers: { Authorization: PEXELS_KEY } });
+      const d = await r.json();
+      
+      if (d.audio && d.audio.length) {
+        el.innerHTML = d.audio.slice(0,4).map((a, j) => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+            <div>
+              <div style="font-size:12px;font-weight:500;">${a.title || 'صوت ' + (j+1)}</div>
+              <div style="font-size:10px;color:var(--muted);">${Math.round((a.duration||0)/60)}:${String((a.duration||0)%60).padStart(2,'0')} دقيقة</div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <audio controls style="height:24px;width:120px;" src="${a.audio_files?.[0]?.link || ''}"></audio>
+              <a href="${a.audio_files?.[0]?.link || '#'}" download="RT_sound_${a.id}.mp3" 
+                style="background:var(--green);color:white;padding:4px 8px;border-radius:5px;font-size:11px;text-decoration:none;">⬇️</a>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        // Fallback: use Pexels video URLs as placeholder with direct links
+        el.innerHTML = cat.queries.map((q, j) => `
+          <div style="padding:7px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:12px;">${cat.icon} ${cat.title} ${j+1}</span>
+              <a href="https://pixabay.com/sound-effects/search/${encodeURIComponent(q)}/" target="_blank"
+                style="background:var(--green);color:white;padding:4px 8px;border-radius:5px;font-size:11px;text-decoration:none;">🔗 بحث</a>
+            </div>
+          </div>
+        `).join('');
+      }
+    } catch(e) {
+      el.innerHTML = cat.queries.map((q,j) => `
+        <div style="padding:6px 0;border-bottom:1px solid var(--border);">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <span style="font-size:12px;">${cat.title} ${j+1}</span>
+            <a href="https://pixabay.com/sound-effects/search/${encodeURIComponent(q)}/" target="_blank"
+              style="background:var(--green);color:white;padding:4px 8px;border-radius:5px;font-size:11px;text-decoration:none;">🔗 بحث</a>
+          </div>
+        </div>
+      `).join('');
+    }
+  }
+}
 
 // ── INIT ──────────────────────────────────────────────
 renderSchedule();

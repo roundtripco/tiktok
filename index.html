@@ -333,20 +333,9 @@ async function quickSend(id) {
   st.textContent = '⏳ جاري جلب الفيديو من Pexels...';
 
   try {
-    // Fetch multiple videos
     const videos = await fetchMultipleVideos(p.pexels);
-    for (let i = 0; i < videos.length; i++) {
-      await new Promise(r => setTimeout(r, 400 * i));
-      const a = document.createElement('a');
-      a.href = videos[i].url;
-      a.download = `RT_${p.id}_clip${i+1}.mp4`;
-      a.target = '_blank';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
     st.className = 'inline-status done';
-    st.innerHTML = `✅ تم تحميل ${videos.length} مقاطع — أعطها للمصمم`;
+    st.innerHTML = `✅ ${videos.length} مقاطع جاهزة — <a href="#" onclick="openModal(${p.id});return false;">افتح التفاصيل لتحميلها</a>`;
   } catch(e) {
     st.className = 'inline-status error';
     st.textContent = '⚠️ ' + (e.message || 'حدث خطأ، حاول مرة ثانية');

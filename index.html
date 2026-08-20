@@ -234,7 +234,7 @@ let currentVideoUrl = null;
 
 // ── PEXELS ──────────────────────────────────────────
 async function fetchPexelsVideo(query) {
-  const url = `https://api.pexels.com/videos/search?query=${encodeURIComponent(query)}&per_page=5&orientation=portrait&size=medium`;
+  const url = `http://187.127.84.160:8080/pexels-proxy/videos/search?query=${encodeURIComponent(query)}&per_page=5&orientation=portrait&size=medium`;
   const r = await fetch(url, { headers: { Authorization: PEXELS_KEY } });
   const d = await r.json();
   if (!d.videos || !d.videos.length) throw new Error('لم يتم العثور على فيديو');
@@ -250,7 +250,7 @@ async function fetchPexelsVideo(query) {
 async function sendToDescriptAPI(videoUrl, topic) {
   // We use Claude API to trigger Descript via prompt
   // Since we can't call Descript MCP from JS, we call Claude API with Descript MCP
-  const r = await fetch('https://api.anthropic.com/v1/messages', {
+  const r = await fetch('http://187.127.84.160:8080/descript-proxy/v2/mcp/claude', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

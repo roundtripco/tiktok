@@ -184,7 +184,7 @@
     <div class="descript-result" id="descResult"></div>
 
     <div class="modal-footer">
-      <button class="btn-modal btn-primary" id="btnDesc" onclick="modalSendDescript()">⬇️ تحميل الفيديو</button>
+      <button class="btn-modal btn-primary" id="btnDesc" onclick="modalSendDescript()">⬇️ تحميل الكل</button>
       <button class="btn-modal btn-secondary" onclick="closeModal()">إغلاق</button>
     </div>
   </div>
@@ -231,6 +231,7 @@ const ideas = [
 let done = JSON.parse(localStorage.getItem('rt_done') || '[]');
 let currentPost = null;
 let currentVideoUrl = null;
+let currentVideos = [];
 
 // ── PEXELS ──────────────────────────────────────────
 async function fetchPexelsVideo(query) {
@@ -325,27 +326,27 @@ async function quickSend(id) {
   st.textContent = '⏳ جاري جلب الفيديو من Pexels...';
 
   try {
-    // 1. Fetch video from Pexels
-    const video = await fetchPexelsVideo(p.pexels);
-    
-    // 2. Download directly
-    const a = document.createElement('a');
-    a.href = video.url;
-    a.download = `RT_TikTok_${p.id}_${p.topic.replace(/\s+/g,'_').substring(0,30)}.mp4`;
-    a.target = '_blank';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-
+    // Fetch multiple videos
+    const videos = await fetchMultipleVideos(p.pexels);
+    for (let i = 0; i < videos.length; i++) {
+      await new Promise(r => setTimeout(r, 400 * i));
+      const a = document.createElement('a');
+      a.href = videos[i].url;
+      a.download = `RT_${p.id}_clip${i+1}.mp4`;
+      a.target = '_blank';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
     st.className = 'inline-status done';
-    st.innerHTML = `✅ جاري تحميل الفيديو...`;
+    st.innerHTML = `✅ تم تحميل ${videos.length} مقاطع — أعطها للمصمم`;
   } catch(e) {
     st.className = 'inline-status error';
     st.textContent = '⚠️ ' + (e.message || 'حدث خطأ، حاول مرة ثانية');
   }
 
   btn.disabled = false;
-  btn.innerHTML = '⬇️ حمّل';
+  btn.innerHTML = '⬇️ تحميل الكل';
 }
 
 // ── MODAL ─────────────────────────────────────────────
@@ -360,23 +361,32 @@ async function openModal(id) {
   document.getElementById('mHash').textContent = currentPost.hashtags;
   document.getElementById('descResult').className = 'descript-result';
   document.getElementById('btnDesc').disabled = false;
-  document.getElementById('btnDesc').textContent = '⬇️ تحميل الفيديو';
+  document.getElementById('btnDesc').textContent = '⬇️ تحميل الكل';
 
-  // Load video preview
+  // Load video previews
   const wrap = document.getElementById('mVideoWrap');
-  wrap.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:13px;">⏳ جاري تحميل الفيديو...</div>';
+  wrap.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:13px;">⏳ جاري تحميل المقاطع...</div>';
   document.getElementById('overlay').classList.add('open');
 
   try {
-    const video = await fetchPexelsVideo(currentPost.pexels);
-    currentVideoUrl = video.url;
+    const videos = await fetchMultipleVideos(currentPost.pexels);
+    currentVideoUrl = videos[0].url;
+    currentVideos = videos;
     wrap.innerHTML = `
-      <div class="video-preview">
-        <video src="${video.url}" muted autoplay loop playsinline style="width:100%;max-height:220px;object-fit:cover;"></video>
-        <div class="video-preview-info">🔇 سيتم إيقاف الصوت في Descript | Pexels Video #${video.id}</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">📥 ${videos.length} مقاطع جاهزة للتحميل — أعطها للمصمم يدمجها</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        ${videos.map((v,i) => `
+          <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;">
+            <video src="${v.url}" muted autoplay loop playsinline style="width:100%;height:120px;object-fit:cover;"></video>
+            <div style="padding:6px 8px;display:flex;align-items:center;justify-content:space-between;">
+              <span style="font-size:10px;color:var(--muted);">مقطع ${i+1}</span>
+              <a href="${v.url}" download="RT_${currentPost.id}_clip${i+1}.mp4" style="font-size:11px;background:var(--green);color:white;padding:3px 8px;border-radius:4px;text-decoration:none;">⬇️</a>
+            </div>
+          </div>
+        `).join('')}
       </div>`;
   } catch(e) {
-    wrap.innerHTML = `<div style="padding:12px;color:#c0392b;font-size:13px;">⚠️ تعذر تحميل الفيديو: ${e.message}</div>`;
+    wrap.innerHTML = `<div style="padding:12px;color:#c0392b;font-size:13px;">⚠️ تعذر تحميل المقاطع: ${e.message}</div>`;
   }
 }
 
@@ -406,7 +416,7 @@ async function modalSendDescript() {
   }
 
   btn.disabled = false;
-  btn.textContent = '⬇️ تحميل الفيديو';
+  btn.textContent = '⬇️ تحميل الكل';
 }
 
 function closeModal() {

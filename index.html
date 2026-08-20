@@ -234,17 +234,24 @@ let currentVideoUrl = null;
 let currentVideos = [];
 
 // ── PEXELS ──────────────────────────────────────────
-async function fetchPexelsVideo(query) {
-  const url = `http://187.127.84.160:8080/pexels-proxy/videos/search?query=${encodeURIComponent(query)}&per_page=5&orientation=portrait&size=medium`;
+async function fetchMultipleVideos(query) {
+  const url = `http://187.127.84.160:8080/pexels-proxy/videos/search?query=${encodeURIComponent(query)}&per_page=15&orientation=portrait&size=medium`;
   const r = await fetch(url, { headers: { Authorization: PEXELS_KEY } });
   const d = await r.json();
   if (!d.videos || !d.videos.length) throw new Error('لم يتم العثور على فيديو');
-  // Pick first video with HD file
+  const results = [];
   for (const v of d.videos) {
     const hd = v.video_files.find(f => f.quality === 'hd' || f.quality === 'sd');
-    if (hd) return { url: hd.link, thumb: v.image, id: v.id };
+    if (hd) results.push({ url: hd.link, thumb: v.image, id: v.id });
+    if (results.length >= 5) break;
   }
-  throw new Error('لا يوجد ملف مناسب');
+  if (!results.length) throw new Error('لا يوجد ملف مناسب');
+  return results;
+}
+
+async function fetchPexelsVideo(query) {
+  const videos = await fetchMultipleVideos(query);
+  return videos[0];
 }
 
 // ── DESCRIPT ─────────────────────────────────────────

@@ -184,7 +184,7 @@
     <div class="descript-result" id="descResult"></div>
 
     <div class="modal-footer">
-      <button class="btn-modal btn-primary" id="btnDesc" onclick="modalSendDescript()">🎬 أرسل لـ Descript</button>
+      <button class="btn-modal btn-primary" id="btnDesc" onclick="modalSendDescript()">⬇️ تحميل الفيديو</button>
       <button class="btn-modal btn-secondary" onclick="closeModal()">إغلاق</button>
     </div>
   </div>
@@ -327,25 +327,25 @@ async function quickSend(id) {
   try {
     // 1. Fetch video from Pexels
     const video = await fetchPexelsVideo(p.pexels);
-    st.textContent = '⏳ جاري الإرسال لـ Descript...';
+    
+    // 2. Download directly
+    const a = document.createElement('a');
+    a.href = video.url;
+    a.download = `RT_TikTok_${p.id}_${p.topic.replace(/\s+/g,'_').substring(0,30)}.mp4`;
+    a.target = '_blank';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
 
-    // 2. Send to Descript via Claude API
-    const result = await sendToDescriptAPI(video.url, p.topic);
-
-    if (result.url) {
-      st.className = 'inline-status done';
-      st.innerHTML = `✅ جاهز في Descript — <a href="${result.url}" target="_blank">افتح المشروع</a>`;
-    } else {
-      st.className = 'inline-status done';
-      st.innerHTML = `✅ تم الإرسال — <a href="https://web.descript.com" target="_blank">افتح Descript</a> وشوف المشروع الجديد`;
-    }
+    st.className = 'inline-status done';
+    st.innerHTML = `✅ جاري تحميل الفيديو...`;
   } catch(e) {
     st.className = 'inline-status error';
     st.textContent = '⚠️ ' + (e.message || 'حدث خطأ، حاول مرة ثانية');
   }
 
   btn.disabled = false;
-  btn.innerHTML = '🎬 أرسل';
+  btn.innerHTML = '⬇️ حمّل';
 }
 
 // ── MODAL ─────────────────────────────────────────────
@@ -360,7 +360,7 @@ async function openModal(id) {
   document.getElementById('mHash').textContent = currentPost.hashtags;
   document.getElementById('descResult').className = 'descript-result';
   document.getElementById('btnDesc').disabled = false;
-  document.getElementById('btnDesc').textContent = '🎬 أرسل لـ Descript';
+  document.getElementById('btnDesc').textContent = '⬇️ تحميل الفيديو';
 
   // Load video preview
   const wrap = document.getElementById('mVideoWrap');
@@ -406,7 +406,7 @@ async function modalSendDescript() {
   }
 
   btn.disabled = false;
-  btn.textContent = '🎬 أرسل لـ Descript';
+  btn.textContent = '⬇️ تحميل الفيديو';
 }
 
 function closeModal() {

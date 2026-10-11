@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1C2C25">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>رحلة فرنسا وهولندا | اسم العميل</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&family=Cormorant+Garamond:wght@600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --green:#1C2C25; --green2:#4A6B5B; --gold:#B8955A; --gold-soft:#E9DCC3;
+  --bg:#F6F3EC; --card:#FFFFFF; --ink:#1C2C25; --muted:#6E7A73; --line:#E4DED2; --done:#A7AEA9;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121A16; --card:#1A2621; --ink:#EDE8DE; --muted:#9AA69F; --line:#2A3832; --done:#5C6862; --gold-soft:#3A3326;
+}}
+:root[data-theme="dark"]{--bg:#121A16; --card:#1A2621; --ink:#EDE8DE; --muted:#9AA69F; --line:#2A3832; --done:#5C6862; --gold-soft:#3A3326;}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Tajawal","Noto Sans Arabic",system-ui,sans-serif;font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
+a{color:inherit}
+.wrap{max-width:560px;margin:0 auto;padding-bottom:96px;position:relative}
+
+/* watermark */
+.wm{position:fixed;inset:0;pointer-events:none;z-index:50;opacity:.045;overflow:hidden;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='120'%3E%3Ctext x='30' y='70' transform='rotate(-24 100 60)' font-family='Tajawal,sans-serif' font-size='20' fill='%231C2C25'%3ERoundtripco%3C/text%3E%3C/svg%3E")}
+
+/* hero */
+.hero{background:var(--green);color:#F3EEE3;padding:28px 22px 26px;border-radius:0 0 28px 28px;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;left:-40px;bottom:-60px;width:220px;height:220px;border:1px solid rgba(184,149,90,.35);border-radius:50%}
+.brand{font-family:"Cormorant Garamond",serif;font-size:20px;letter-spacing:.5px;color:var(--gold)}
+.hero h1{margin:14px 0 2px;font-size:26px;font-weight:800;line-height:1.25}
+.hero .sub{color:#C9D3CC;font-size:15px}
+.status{margin-top:18px;display:flex;align-items:baseline;gap:10px}
+.status b{font-family:"Cormorant Garamond",serif;font-size:52px;line-height:1;color:var(--gold)}
+.status span{font-size:15px;color:#DCE3DE}
+.route{display:flex;gap:6px;margin-top:18px;flex-wrap:wrap;font-size:13px}
+.route i{font-style:normal;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.08);color:#E6ECE8}
+.route i.on{background:var(--gold);color:var(--green);font-weight:700}
+
+/* day strip */
+.days{display:flex;gap:8px;overflow-x:auto;padding:18px 18px 6px;scrollbar-width:none;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);z-index:5}
+.days::-webkit-scrollbar{display:none}
+.chip{flex:0 0 auto;min-width:58px;text-align:center;padding:8px 6px;border-radius:14px;border:1px solid var(--line);background:var(--card);cursor:pointer;color:var(--ink);font:inherit}
+.chip small{display:block;font-size:11px;color:var(--muted)}
+.chip strong{font-size:17px}
+.chip.sel{background:var(--green);border-color:var(--green);color:#fff}
+.chip.sel small{color:#C9D3CC}
+.chip.today{box-shadow:0 0 0 2px var(--gold)}
+.chip.full strong::after{content:" ✓";color:var(--gold);font-size:13px}
+
+section.panel{padding:6px 18px}
+.dayhead{display:flex;justify-content:space-between;align-items:flex-end;margin:12px 0 10px}
+.dayhead h2{margin:0;font-size:21px}
+.dayhead .city{color:var(--green2);font-weight:700;font-size:14px}
+:root[data-theme="dark"] .dayhead .city{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .dayhead .city{color:var(--gold)}}
+.prog{font-size:13px;color:var(--muted);text-align:left}
+.bar{height:5px;border-radius:5px;background:var(--line);margin-top:4px;width:90px;overflow:hidden}
+.bar>div{height:100%;background:var(--gold);transition:width .3s}
+.intro{background:var(--gold-soft);border-radius:14px;padding:10px 14px;font-size:14.5px;margin-bottom:12px}
+
+.group-t{font-size:14px;color:var(--muted);margin:18px 2px 8px;font-weight:700}
+.list{list-style:none;margin:0;padding:0;background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.item{display:flex;gap:12px;align-items:flex-start;padding:13px 14px;border-top:1px solid var(--line);transition:background .2s}
+.item:first-child{border-top:0}
+.ck{flex:0 0 26px;height:26px;border-radius:50%;border:2px solid var(--green2);background:transparent;cursor:pointer;display:grid;place-items:center;margin-top:1px;padding:0;color:#fff}
+.ck svg{width:14px;height:14px;opacity:0}
+.item.done .ck{background:var(--green2);border-color:var(--green2)}
+.item.done .ck svg{opacity:1}
+.body{flex:1;min-width:0}
+.t{font-weight:500}
+.item.done .t{text-decoration:line-through;color:var(--done)}
+.note{font-size:13px;color:var(--muted);margin-top:2px}
+.item.done .note{color:var(--done)}
+.links{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.links a{font-size:12.5px;text-decoration:none;padding:3px 10px;border-radius:20px;border:1px solid var(--line);color:var(--green2);background:var(--bg)}
+:root[data-theme="dark"] .links a{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .links a{color:var(--gold)}}
+.opt{font-size:11px;color:var(--gold);font-weight:700;margin-inline-start:6px}
+.item.done{order:9}
+.list{display:flex;flex-direction:column}
+
+.food{display:flex;flex-wrap:wrap;gap:8px}
+.food a{text-decoration:none;background:var(--card);border:1px solid var(--line);padding:8px 13px;border-radius:12px;font-size:14px;direction:ltr}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+.card h3{margin:0 0 4px;font-size:17px;direction:ltr;text-align:right}
+.card .meta{font-size:14px;color:var(--muted)}
+.card .city-t{color:var(--gold);font-weight:700;font-size:13px}
+.btn{display:inline-block;margin-top:10px;background:var(--green);color:#fff;text-decoration:none;padding:9px 16px;border-radius:12px;font-size:14px;font-weight:700}
+.flight{display:flex;align-items:center;gap:10px}
+.flight .ap{flex:1}
+.flight .ap b{display:block;font-size:15px}
+.flight .ap small{color:var(--muted)}
+.flight .ln{flex:0 0 40px;border-top:1px dashed var(--gold);position:relative}
+.fno{display:inline-block;margin-inline-start:6px;padding:1px 8px;border-radius:8px;background:var(--gold-soft);color:var(--ink);font-size:12px;direction:ltr}
+.tip{display:flex;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.tip:first-of-type{border-top:0}
+.tip b{display:block;font-size:15px}
+.tip p{margin:2px 0 0;font-size:14px;color:var(--muted)}
+.tr{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-top:1px solid var(--line);font-size:14.5px}
+.tr:first-of-type{border-top:0}
+.tr small{color:var(--muted);white-space:nowrap}
+
+/* nav */
+nav.tabs{position:fixed;bottom:0;left:0;right:0;z-index:20;background:var(--card);border-top:1px solid var(--line);padding:8px 8px calc(8px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center}
+nav.tabs .in{display:flex;max-width:560px;width:100%}
+nav.tabs button{flex:1;background:none;border:0;font:inherit;font-size:12px;color:var(--muted);padding:4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button.on{color:var(--green2);font-weight:700}
+:root[data-theme="dark"] nav.tabs button.on{color:var(--gold)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) nav.tabs button.on{color:var(--gold)}}
+.view{display:none}.view.on{display:block}
+button:focus-visible,a:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+
+.wa{position:fixed;bottom:calc(76px + env(safe-area-inset-bottom,0px));left:16px;z-index:21;width:52px;height:52px;border-radius:50%;background:#25D366;display:grid;place-items:center;box-shadow:0 6px 18px rgba(0,0,0,.18)}
+.wa svg{width:28px;height:28px;fill:#fff}
+
+/* expired */
+.expired{min-height:100vh;display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;background:var(--green);color:#F3EEE3}
+.expired .brand{font-size:30px;margin-bottom:16px}
+.expired h2{font-size:24px;margin:0 0 8px}
+.expired p{color:#C9D3CC;margin:0 0 22px}
+.expired a{background:var(--gold);color:var(--green);text-decoration:none;padding:11px 22px;border-radius:12px;font-weight:700;margin:4px}
+body.is-expired .wrap,body.is-expired nav.tabs,body.is-expired .wa{display:none}
+body.is-expired .expired{display:flex}
+.foot{text-align:center;font-size:12px;color:var(--muted);padding:24px 18px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.toast{position:fixed;bottom:calc(140px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--green);color:#fff;padding:10px 16px;border-radius:12px;font-size:14px;z-index:60;display:none;max-width:90%;text-align:center}
+.toast.on{display:block}
+.cover{position:relative;height:170px;border-radius:20px;overflow:hidden;margin:10px 0 4px;background:linear-gradient(135deg,var(--green2),var(--green))}
+.cover img{width:100%;height:100%;object-fit:cover;display:block}
+.cover::after{content:"";position:absolute;inset:0;background:linear-gradient(to top,rgba(20,32,26,.75),rgba(20,32,26,0) 60%)}
+.cover .cap{position:absolute;bottom:12px;right:16px;z-index:1;color:#fff}
+.cover .cap small{display:block;color:var(--gold-soft);font-size:13px}
+:root[data-theme="dark"] .cover .cap small{color:#E9DCC3}
+.cover .cap b{font-size:22px}
+.art{position:absolute;inset:0;background:linear-gradient(180deg,#2C4A3D 0%,#4A6B5B 55%,#7E8F74 100%)}
+.art svg{width:100%;height:100%;display:block}
+.art .s{fill:#13221B}.art .s2{fill:#1E3329}.art .w{fill:#E2C68F}.art .g{fill:#B8955A}
+.art .ln{stroke:#13221B;stroke-width:2;fill:none}.art .gl{stroke:#E2C68F;stroke-width:1.6;fill:none;stroke-linecap:round}
+.art .sn{fill:#F3EEE3;opacity:.55}.art .mo{fill:#E9DCC3;opacity:.9}.art .wt{fill:#2C4A3D}
+.card .ph{height:120px;margin:-16px -16px 12px;border-radius:18px 18px 0 0;overflow:hidden;background:linear-gradient(135deg,var(--green2),var(--green))}
+.card .ph img{width:100%;height:100%;object-fit:cover;display:block}
+</style>
+</head>
+<body>
+<div class="wm" aria-hidden="true"></div>
+
+<div class="expired">
+  <div class="brand">Roundtripco</div>
+  <h2>انتهت رحلتك، الحمدلله على السلامة</h2>
+  <p>شكراً لاختيارك راوند تريب. نتشرف نخطط رحلتك الجاية.</p>
+  <div>
+    <a href="https://wa.me/96565750302">تواصل معنا</a>
+    <a href="https://instagram.com/roundtripco">@Roundtripco</a>
+  </div>
+</div>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="brand">Roundtripco</div>
+    <h1>رحلة فرنسا وهولندا</h1>
+    <div class="sub">اسم العميل · ١٨ ديسمبر ٢٠٢٦ – ٢ يناير ٢٠٢٧ · ١٥ ليلة</div>
+    <div class="status" id="status"></div>
+    <div class="route" id="route"></div>
+  </header>
+
+  <!-- PLAN -->
+  <div class="view on" id="v-plan">
+    <div class="days" id="days"></div>
+    <section class="panel" id="day"></section>
+  </div>
+
+  <!-- STAY -->
+  <div class="view" id="v-stay"><section class="panel" style="padding-top:20px" id="stay"></section></div>
+
+  <!-- FLIGHTS -->
+  <div class="view" id="v-fly"><section class="panel" style="padding-top:20px" id="fly"></section></div>
+
+  <!-- TIPS -->
+  <div class="view" id="v-tips"><section class="panel" style="padding-top:20px" id="tips"></section></div>
+
+  <div class="foot">صُمم هذا الجدول خصيصاً للسيد اسم العميل<br>يرجى عدم النشر أو الاستخدام التجاري</div>
+</div>
+
+<a class="wa" href="https://wa.me/96565750302" aria-label="تواصل معنا واتساب"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8 0-1.4.7-2 1-2.3.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.2.1.4 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 2 1.1.9 2 1.2 2.3 1.4.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.2z"/></svg></a>
+
+<div class="toast" id="toast"></div>
+<nav class="tabs"><div class="in">
+  <button class="on" data-v="plan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="3"/><path d="M3 9h18M8 2v4M16 2v4M8 14l2 2 4-4"/></svg>الجدول</button>
+  <button data-v="stay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V8l9-5 9 5v13"/><path d="M9 21v-6h6v6"/></svg>السكن</button>
+  <button data-v="fly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 16l20-6-2-2-7 2-5-6H6l2 7-4 1-2-2H1z"/><path d="M2 21h20"/></svg>الطيران</button>
+  <button data-v="tips"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v.5M12 11v5"/></svg>الإرشادات</button>
+</div></nav>
+
+<script>
+const G = q => "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(q);
+const TRIP = {
+  id: "client-2026-12",
+  start: "2026-12-18", end: "2027-01-02",
+  expireAfterDays: 2,
+  route: ["القصر","ديزني","باريس","أمستردام"],
+  days: [
+    {d:"2026-12-18", st:0, em:"🏰", city:"Château de Challain", intro:"الوصول لمطار شارل ديغول الساعة ٦:٣٥ الصبح. السائق الخاص بانتظاركم ويوصلكم للقصر، والطريق ٣ ساعات ونص تقريباً.",
+     items:[
+      {t:"استقبال السائق الخاص في صالة الوصول", n:"مطار Paris Charles de Gaulle (CDG)"},
+      {t:"الطريق إلى قصر Château de Challain", n:"٣٥٠ كم تقريباً · فيه استراحات على الطريق السريع", l:[["الموقع",G("Château de Challain, 49440 Challain-la-Potherie")]]},
+      {t:"تسجيل الدخول في القصر والراحة"},
+      {t:"جولة في حدائق القصر ومحيطه"},
+      {t:"مدينة Angers وقلعتها", opt:1, n:"تبعد عن القصر ٤٠ دقيقة تقريباً · تحتاج تنسيق مع السائق", l:[["الموقع",G("Château d'Angers")]]}],
+     food:[]},
+    {d:"2026-12-19", st:0, em:"💍", city:"Château de Challain", intro:"يوم حفل الزفاف. خلّينا اليوم خفيف عشان الراحة والتجهيز.",
+     items:[
+      {t:"الفطور في القصر"},
+      {t:"الراحة والتجهيز للحفل"},
+      {t:"حضور حفل الزفاف"},
+      {t:"جولة قصيرة في قرية Challain-la-Potherie", opt:1, n:"قبل الحفل إذا سمح الوقت"}],
+     food:[]},
+    {d:"2026-12-20", st:1, em:"🎄", city:"Disneyland Paris", intro:"تسجيل الخروج من القصر، والسائق الخاص يوصلكم لفندق Disney's Newport Bay Club. الطريق ٤ ساعات تقريباً.",
+     items:[
+      {t:"تسجيل الخروج من القصر", n:"تأكد من موعد الخروج مع إدارة القصر"},
+      {t:"الطريق إلى ديزني مع السائق الخاص"},
+      {t:"تسجيل الدخول في Newport Bay Club", n:"الدخول عادة من الساعة ٣ العصر · تقدر تترك الشنط بدري", l:[["الموقع",G("Disney's Newport Bay Club")]]},
+      {t:"المشي حول بحيرة Lake Disney", n:"قريبة من الفندق وتوصلك لـ Disney Village"},
+      {t:"Disney Village للعشاء والتسوق وأجواء الكريسماس", l:[["الموقع",G("Disney Village, Chessy")]]}],
+     food:[["Rainforest Cafe",G("Rainforest Cafe Disney Village")],["Five Guys",G("Five Guys Disney Village")],["Earl of Sandwich",G("Earl of Sandwich Disney Village")],["Annette's Diner",G("Annette's Diner Disney Village")],["Cape Cod",G("Cape Cod restaurant Newport Bay Club")]]},
+    {d:"2026-12-21", st:1, em:"🏰", city:"Disneyland Paris", intro:"يوم كامل في ديزني. ننصح تكونون عند البوابة قبل الافتتاح بنص ساعة.",
+     items:[
+      {t:"حديقة Disneyland Park", n:"شارع Main Street بزينة الكريسماس وقلعة الأميرة النائمة", l:[["الموقع",G("Disneyland Park Paris")]]},
+      {t:"موكب الكريسماس في Disneyland Park", n:"شوف موعده في تطبيق Disneyland Paris"},
+      {t:"حديقة Disney Adventure World", n:"Walt Disney Studios سابقاً · فيها منطقة World of Frozen الجديدة و Avengers Campus", l:[["الموقع",G("Disney Adventure World Paris")]]},
+      {t:"لعبة Ratatouille ولعبة Crush's Coaster"},
+      {t:"عرض الألعاب النارية المسائي عند القلعة", n:"اختار مكانك بدري لأن الزحمة كبيرة"}],
+     food:[["Bistrot Chez Rémy",G("Bistrot Chez Remy Disneyland Paris")],["Auberge de Cendrillon",G("Auberge de Cendrillon Disneyland Paris")],["Captain Jack's",G("Captain Jack's Restaurant des Pirates")],["Plaza Gardens",G("Plaza Gardens Restaurant Disneyland Paris")]]},
+    {d:"2026-12-22", st:2, em:"✨", city:"باريس · الشانزليزيه", intro:"تسجيل الخروج من ديزني، والسائق الخاص يوصلكم لفندق Rochester Champs-Élysées (ساعة تقريباً). الفندق قريب من الشانزليزيه مشي.",
+     items:[
+      {t:"الوصول للفندق وتسجيل الدخول", n:"الدخول عادة من الساعة ٣ العصر"},
+      {t:"شارع Champs-Élysées وأضواء الكريسماس", l:[["الموقع",G("Avenue des Champs-Élysées")]]},
+      {t:"قوس النصر Arc de Triomphe", n:"الصعود للسطح وقت الغروب يعطيك إطلالة على الشانزليزيه", l:[["الموقع",G("Arc de Triomphe Paris")]]},
+      {t:"شارع Avenue Montaigne للتسوق الفاخر", l:[["الموقع",G("Avenue Montaigne Paris")]]},
+      {t:"جسر Pont Alexandre III وقصر Grand Palais", l:[["الموقع",G("Pont Alexandre III")]]}],
+     food:[["Al Ajami",G("Al Ajami restaurant Paris 8")],["Noura Marceau",G("Noura Marceau Paris")],["L'Etoile Marocaine",G("L'Etoile Marocaine 56 rue Galilée Paris")],["Ladurée",G("Ladurée Champs-Élysées")],["Pierre Hermé",G("Pierre Hermé Champs-Élysées")]]},
+    {d:"2026-12-23", st:2, em:"🗼", city:"باريس · برج إيفل", intro:"يوم برج إيفل ونهر السين، والمساء تسوق في Galeries Lafayette.",
+     items:[
+      {t:"برج إيفل Eiffel Tower", n:"احجز التذاكر مسبقاً من الموقع الرسمي", l:[["الموقع",G("Eiffel Tower")]]},
+      {t:"ساحة Trocadéro لأجمل صورة للبرج", l:[["الموقع",G("Trocadéro Paris")]]},
+      {t:"رحلة بالقارب في نهر السين", n:"Bateaux Mouches أو Bateaux Parisiens", l:[["Bateaux Mouches",G("Bateaux Mouches Paris")],["Bateaux Parisiens",G("Bateaux Parisiens")]]},
+      {t:"Galeries Lafayette: شجرة الكريسماس والسطح", l:[["الموقع",G("Galeries Lafayette Haussmann")]]},
+      {t:"واجهات Printemps للكريسماس", l:[["الموقع",G("Printemps Haussmann")]]},
+      {t:"دار الأوبرا Opéra Garnier", opt:1, l:[["الموقع",G("Palais Garnier")]]}],
+     food:[["Carette Trocadéro",G("Carette Trocadéro Paris")],["Noura Marceau",G("Noura Marceau Paris")],["Al Ajami",G("Al Ajami restaurant Paris 8")]]},
+    {d:"2026-12-24", st:2, em:"🖼️", city:"باريس · اللوفر", intro:"ليلة الكريسماس. أغلب المحلات تسكر بدري (من ٥ إلى ٧ المساء)، فاحجز مطعم العشاء مسبقاً.",
+     items:[
+      {t:"متحف اللوفر Louvre", n:"احجز موعد الدخول مسبقاً · المتحف مسكر يوم الثلاثاء", l:[["الموقع",G("Musée du Louvre")]]},
+      {t:"حديقة Tuileries", n:"عادة فيها فعاليات وأكشاك الكريسماس في ديسمبر", l:[["الموقع",G("Jardin des Tuileries")]]},
+      {t:"ساحة Place de la Concorde وساحة Place Vendôme", l:[["Concorde",G("Place de la Concorde")],["Vendôme",G("Place Vendôme")]]},
+      {t:"شارع Rue de Rivoli للتسوق", l:[["الموقع",G("Rue de Rivoli Paris")]]},
+      {t:"كاتدرائية Notre-Dame", n:"افتتحت من جديد بعد الترميم · الدخول مجاني", l:[["الموقع",G("Cathédrale Notre-Dame de Paris")]]}],
+     food:[["Angelina",G("Angelina Rue de Rivoli Paris")],["Assanabel",G("Assanabel Saint Germain Paris")],["Ladurée",G("Ladurée Champs-Élysées")]]},
+    {d:"2026-12-25", st:2, em:"🎅", city:"باريس · مونمارتر", intro:"يوم الكريسماس: أغلب المتاحف والمحلات مسكرة، فرتبنا لك أنشطة مفتوحة. تأكد من المواعيد قبل الذهاب.",
+     items:[
+      {t:"حي Montmartre وكنيسة Sacré-Cœur", n:"مفتوحة يوم الكريسماس · إطلالة على كل باريس", l:[["الموقع",G("Sacré-Cœur Paris")]]},
+      {t:"ساحة الرسامين Place du Tertre", l:[["الموقع",G("Place du Tertre")]]},
+      {t:"صورة عند Moulin Rouge", l:[["الموقع",G("Moulin Rouge Paris")]]},
+      {t:"برج إيفل بالليل", n:"البرج مفتوح يوم الكريسماس · يلمع ٥ دقايق مع بداية كل ساعة بعد الغروب", l:[["الموقع",G("Eiffel Tower")]]},
+      {t:"عشاء على قارب في نهر السين", opt:1, n:"احجز مسبقاً لأن أماكن يوم الكريسماس تخلص بسرعة"},
+      {t:"المشي في الشانزليزيه وأضواء الكريسماس"}],
+     food:[]},
+    {d:"2026-12-26", st:2, em:"👑", city:"Versailles · Le Marais", intro:"زيارة قصر فرساي (٤٥ دقيقة تقريباً بالقطار RER C أو بالتاكسي)، وفي المساء حي Le Marais.",
+     items:[
+      {t:"قصر Versailles وقاعة المرايا", n:"احجز موعد الدخول مسبقاً · القصر مسكر يوم الإثنين", l:[["الموقع",G("Château de Versailles")]]},
+      {t:"حدائق فرساي و Trianon", l:[["الموقع",G("Domaine de Trianon Versailles")]]},
+      {t:"العودة لباريس"},
+      {t:"حي Le Marais وساحة Place des Vosges", l:[["الموقع",G("Place des Vosges")]]}],
+     food:[["Angelina Versailles",G("Angelina Château de Versailles")],["Ore Ducasse",G("Ore Ducasse au château de Versailles")],["Chez Omar",G("Chez Omar Paris")],["Carette Vosges",G("Carette Place des Vosges")]]},
+    {d:"2026-12-27", st:3, em:"🚘", city:"Brussels · أمستردام", intro:"تسجيل الخروج، والسائق الخاص يوصلكم لأمستردام (٥ ساعات ونص تقريباً). نقترح وقفة في بروكسل بنص الطريق.",
+     items:[
+      {t:"تسجيل الخروج من الفندق", n:"الخروج عادة الساعة ١٢ الظهر"},
+      {t:"ساحة Grand-Place في بروكسل", opt:1, n:"وقفة بالطريق · ساعة إلى ساعتين", l:[["الموقع",G("Grand-Place Brussels")]]},
+      {t:"ممر Galeries Royales Saint-Hubert للشوكولاتة البلجيكية", opt:1, l:[["الموقع",G("Galeries Royales Saint-Hubert")]]},
+      {t:"الوصول لفندق Park Plaza Victoria", n:"مقابل محطة Amsterdam Centraal", l:[["الموقع",G("Park Plaza Victoria Amsterdam")]]},
+      {t:"ساحة Dam وأجواء الكريسماس", l:[["الموقع",G("Dam Square Amsterdam")]]},
+      {t:"مهرجان الأضواء Amsterdam Light Festival", n:"المشاهدة مجانية من الشوارع · من ٢٦ نوفمبر إلى ١٧ يناير", l:[["الموقع",G("Amsterdam Light Festival")]]}],
+     food:[["Maison Dandoy",G("Maison Dandoy Grand-Place Brussels")],["Meram",G("Meram Amsterdam Centrum")],["Sefa BBQ",G("Sefa BBQ Grill-Room Amsterdam")]]},
+    {d:"2026-12-28", st:3, em:"🚤", city:"أمستردام", intro:"جولة في أمستردام والقنوات. أغلب الأماكن قريبة من الفندق مشي.",
+     items:[
+      {t:"جولة بالقارب في القنوات", n:"في المساء فيه جولات خاصة بمهرجان الأضواء · احجز مسبقاً", l:[["الموقع",G("Amsterdam canal cruise Central Station")]]},
+      {t:"القصر الملكي في ساحة Dam", l:[["الموقع",G("Royal Palace Amsterdam")]]},
+      {t:"شوارع De Negen Straatjes وحي Jordaan", n:"محلات ومقاهي على القنوات", l:[["الموقع",G("De 9 Straatjes Amsterdam")]]},
+      {t:"سوق الورد Bloemenmarkt", l:[["الموقع",G("Bloemenmarkt Amsterdam")]]},
+      {t:"برج A'DAM Lookout", n:"العبّارة مجانية من خلف محطة Centraal · فيه أرجوحة على السطح", l:[["الموقع",G("A'DAM Lookout")]]},
+      {t:"بيت آن فرانك", opt:1, n:"التذاكر تخلص قبلها بأسابيع", l:[["الموقع",G("Anne Frank House")]]}],
+     food:[["The Pancake Bakery",G("The Pancake Bakery Amsterdam")],["Winkel 43",G("Winkel 43 Amsterdam")],["Van Wonderen Stroopwafels",G("Van Wonderen Stroopwafels Amsterdam")],["Meram",G("Meram Amsterdam Centrum")]]},
+    {d:"2026-12-29", st:3, em:"🌷", city:"Zaanse Schans · Volendam", intro:"رحلة يوم مع السائق الخاص لطواحين الهواء والقرى الهولندية.",
+     items:[
+      {t:"قرية طواحين الهواء Zaanse Schans", n:"٢٥ دقيقة عن أمستردام · مصنع الأجبان والأحذية الخشبية", l:[["الموقع",G("Zaanse Schans")]]},
+      {t:"قرية Volendam على البحيرة", n:"تصوير باللبس الهولندي التقليدي", l:[["الموقع",G("Volendam")]]},
+      {t:"قرية Marken", opt:1, n:"بالقارب من Volendam أو بالسيارة", l:[["الموقع",G("Marken")]]},
+      {t:"مدينة الأجبان Edam", opt:1, l:[["الموقع",G("Edam Netherlands")]]}],
+     food:[["De Kraai",G("De Kraai Zaanse Schans")]]},
+    {d:"2026-12-30", st:3, em:"🏙️", city:"The Hague · Delft · Rotterdam", intro:"رحلة يوم مع السائق الخاص للاهاي ودلفت وروتردام.",
+     items:[
+      {t:"متحف Mauritshuis في لاهاي", n:"لوحة الفتاة ذات القرط اللؤلؤي", l:[["الموقع",G("Mauritshuis The Hague")]]},
+      {t:"شاطئ Scheveningen والممشى البحري", l:[["الموقع",G("Scheveningen Pier")]]},
+      {t:"مدينة هولندا المصغرة Madurodam", opt:1, l:[["الموقع",G("Madurodam")]]},
+      {t:"ساحة Markt في Delft", n:"ومصنع الخزف الأزرق Royal Delft", l:[["Markt",G("Markt Delft")],["Royal Delft",G("Royal Delft")]]},
+      {t:"سوق Markthal والبيوت المكعبة في روتردام", l:[["Markthal",G("Markthal Rotterdam")],["Cube Houses",G("Cube Houses Rotterdam")]]},
+      {t:"جسر Erasmus", l:[["الموقع",G("Erasmusbrug Rotterdam")]]}],
+     food:[["Markthal",G("Markthal Rotterdam")]]},
+    {d:"2026-12-31", st:3, em:"🎆", city:"Giethoorn · ليلة رأس السنة", intro:"رحلة الصبح مع السائق لقرية جيتهورن (ساعة و٤٥ دقيقة تقريباً)، والعودة قبل الساعة ٤ العصر لاحتفالات رأس السنة.",
+     items:[
+      {t:"قرية Giethoorn", n:"قرية بدون شوارع، كلها قنوات وجسور خشبية · اطلع بدري", l:[["الموقع",G("Giethoorn")]]},
+      {t:"جولة بالقارب في قنوات Giethoorn", n:"القوارب في الشتاء محدودة وتعتمد على الجو"},
+      {t:"العودة لأمستردام قبل الساعة ٤ العصر", n:"المحلات تسكر بدري يوم ٣١"},
+      {t:"عشاء رأس السنة", n:"احجز مسبقاً، المطاعم تكون محجوزة بالكامل"},
+      {t:"الألعاب النارية الساعة ١٢ بالليل", n:"الزحمة كبيرة والناس تطلق ألعاب نارية بالشوارع · انتبه وخلكم قريبين من الفندق"}],
+     food:[]},
+    {d:"2027-01-01", st:3, em:"🎨", city:"أمستردام · Museumplein", intro:"رأس السنة: أغلب المحلات مسكرة والمدينة تصحى متأخر بعد احتفالات الليلة. رتبنا لك أنشطة مفتوحة.",
+     items:[
+      {t:"متحف Rijksmuseum", n:"مفتوح كل أيام السنة · من ٩ الصبح إلى ٥ العصر · احجز مسبقاً", l:[["الموقع",G("Rijksmuseum")]]},
+      {t:"متحف Van Gogh", n:"المواعيد تتغير بالأعياد · تأكد واحجز مسبقاً", l:[["الموقع",G("Van Gogh Museum")]]},
+      {t:"ساحة Museumplein والمشي في Vondelpark", l:[["الموقع",G("Vondelpark")]]},
+      {t:"جولة مسائية بالقارب لمهرجان الأضواء", opt:1, n:"إذا ما سويتها يوم ٢٨"}],
+     food:[]},
+    {d:"2027-01-02", st:3, em:"✈️", city:"المغادرة", intro:"موعد الإقلاع ٤:١٥ العصر من مطار Schiphol. السائق الخاص يوصلكم للمطار (٢٥ دقيقة تقريباً).",
+     items:[
+      {t:"تسجيل الخروج من الفندق"},
+      {t:"المغادرة للمطار مع السائق قبل الساعة ١٢:٤٥ الظهر", n:"عشان توصلون قبل الإقلاع بـ ٣ ساعات"},
+      {t:"آخر مشتريات في Holland Boulevard داخل المطار", opt:1}],
+     food:[]}
+  ],
+  stays:[
+    {city:"Challain-la-Potherie", name:"Château de Challain", in:"18-12-2026", out:"20-12-2026", n:"ليلتين", addr:"Château de Challain, 49440 Challain-la-Potherie", map:G("Château de Challain, 49440 Challain-la-Potherie")},
+    {city:"Disneyland Paris", name:"Disney's Newport Bay Club", in:"20-12-2026", out:"22-12-2026", n:"ليلتين", addr:"Disneyland Paris, 77700 Chessy", note:"الدخول عادة من الساعة ٣ العصر", map:G("Disney's Newport Bay Club")},
+    {city:"باريس", name:"Hotel Rochester Champs-Élysées", in:"22-12-2026", out:"27-12-2026", n:"٥ ليالي", addr:"92 Rue La Boétie, 75008 Paris", note:"الدخول من الساعة ٣ العصر · الخروج ١٢ الظهر", map:G("Hotel Rochester Champs-Elysées 92 Rue La Boétie Paris")},
+    {city:"أمستردام", name:"Park Plaza Victoria Amsterdam", in:"27-12-2026", out:"2-1-2027", n:"٦ ليالي", addr:"Damrak 1-5, 1012 LG Amsterdam", note:"مقابل محطة Amsterdam Centraal", map:G("Park Plaza Victoria Amsterdam Damrak 1-5")}
+  ]
+};
+const IMG = n => "img/" + n + ".jpg";
+const imgTag = n => n ? `<img src="${IMG(n)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+const snow = () => [[40,30],[90,18],[150,40],[210,22],[260,48],[320,26],[370,52],[20,70],[120,64],[230,75],[300,62],[380,90],[60,95]].map(([x,y])=>`<circle class="sn" cx="${x}" cy="${y}" r="1.6"/>`).join("");
+const moon = `<circle class="mo" cx="345" cy="38" r="14"/><circle cx="352" cy="33" r="12" fill="#3A5A4B"/>`;
+const ground = `<rect class="s" x="0" y="150" width="400" height="20"/>`;
+const fw = (x,y,r) => `<g class="gl" transform="translate(${x} ${y})">${[0,45,90,135,180,225,270,315].map(a=>`<path d="M0 0 L${(Math.cos(a*Math.PI/180)*r).toFixed(1)} ${(Math.sin(a*Math.PI/180)*r).toFixed(1)}" stroke-dasharray="2 4"/>`).join("")}</g>`;
+const win = (x0,y0,cols,rows,dx,dy,w=4,h=6) => {let s="";for(let i=0;i<cols;i++)for(let j=0;j<rows;j++)s+=`<rect class="w" x="${x0+i*dx}" y="${y0+j*dy}" width="${w}" height="${h}"/>`;return s;};
+const ART = {
+  chateau:(fx)=>`${snow()}${fx?fw(300,34,16)+fw(250,22,10):moon}<path class="s" d="M40 150V104H260V150Z"/>${[[48,70,18],[92,62,20],[140,40,22],[190,60,20],[236,72,18]].map(([x,y,w])=>`<rect class="s" x="${x}" y="${y}" width="${w}" height="${150-y}"/><path class="s" d="M${x-3} ${y}L${x+w/2} ${y-30}L${x+w+3} ${y}Z"/>`).join("")}${win(52,110,21,2,10,16,5,9)}<path class="w" d="M143 150V128A8 8 0 0 1 159 128V150Z"/><rect class="s2" x="0" y="146" width="400" height="6"/>${[20,280,310,340,370].map(x=>`<circle class="s2" cx="${x}" cy="142" r="9"/>`).join("")}${ground}`,
+  eiffel:()=>`${snow()}${moon}<path class="s" d="M150 6V20M110 150L141 62L146 22H154L159 62L190 150H172C168 128 160 112 150 108C140 112 132 128 128 150Z"/><rect class="s" x="124" y="98" width="52" height="6"/><rect class="s" x="137" y="60" width="26" height="5"/><path class="s" d="M60 150V132L75 124L90 132V150ZM205 150V128H240V150Z"/>${win(213,134,3,1,9,0)}${ground}`,
+  castle:(fx)=>`${snow()}${fx?fw(70,40,22)+fw(250,30,16)+fw(200,62,12):moon}<path class="s" d="M70 150V112H230V150Z"/><rect class="s" x="84" y="84" width="20" height="66"/><path class="s" d="M82 84L94 50L106 84Z"/><rect class="s" x="196" y="88" width="20" height="62"/><path class="s" d="M194 88L206 56L218 88Z"/><rect class="s" x="138" y="62" width="24" height="88"/><path class="s" d="M135 62L150 14L165 62Z"/><rect class="s" x="112" y="92" width="14" height="58"/><path class="s" d="M110 92L119 70L128 92Z"/><rect class="s" x="174" y="94" width="14" height="56"/><path class="s" d="M172 94L181 74L190 94Z"/><path class="w" d="M143 150V132A7 7 0 0 1 157 132V150Z"/>${win(90,96,1,2,0,14)}${win(202,100,1,2,0,14)}${win(146,80,1,2,0,14,8,8)}<path class="gl" d="M150 14V4L158 7L150 10"/>${ground}`,
+  arc:()=>`${snow()}${moon}<path class="s" fill-rule="evenodd" d="M98 150V66H202V150H168V108A18 18 0 0 0 132 108V150ZM112 140V120H122V140ZM178 140V120H188V140Z"/><rect class="s" x="94" y="58" width="112" height="10"/><rect class="s" x="104" y="50" width="92" height="8"/><path class="gl" d="M0 150L400 150"/>${[20,50,250,290,330,370].map(x=>`<circle class="w" cx="${x}" cy="138" r="3"/><rect class="s" x="${x-1}" y="140" width="2" height="10"/>`).join("")}${ground}`,
+  louvre:()=>`${snow()}${moon}<rect class="s2" x="0" y="112" width="400" height="38"/>${win(10,122,26,2,15,12)}<path class="s" d="M80 150L150 74L220 150Z"/><path class="gl" d="M150 74L115 150M150 74L185 150M104 124H196M122 106H178" opacity=".6"/><path class="s" d="M235 150L252 132L269 150ZM31 150L48 132L65 150Z"/>${ground}`,
+  sacre:()=>`${snow()}${moon}<path class="s" d="M118 150V100H182V150Z"/><path class="s" d="M116 100C116 62 184 62 184 100Z"/><rect class="s" x="145" y="44" width="10" height="24"/><path class="s" d="M143 44C143 32 157 32 157 44Z"/><rect class="s" x="149" y="22" width="2" height="12"/><path class="s" d="M92 150V112H118V150ZM90 112C90 92 120 92 120 112ZM182 150V112H208V150ZM180 112C180 92 210 92 210 112Z"/><path class="w" d="M143 150V128A7 7 0 0 1 157 128V150Z"/>${win(126,108,4,1,13,0,5,10)}<path class="s2" d="M0 150C60 126 120 140 160 150Z M240 150C300 128 360 132 400 140V150Z"/>${ground}`,
+  versailles:()=>`${snow()}${moon}<path class="s" d="M10 150V112L20 104H120L130 96H170L180 104H280L290 112V150Z"/>${win(22,116,11,2,10,16,5,9)}${win(182,116,10,2,10,16,5,9)}${win(135,106,4,3,9,14,5,9)}<path class="gl" d="M120 150H180M126 150V138M174 150V138M132 150V140M168 150V140M138 150V141M162 150V141M150 150V136"/><circle class="g" cx="150" cy="134" r="3"/>${ground}`,
+  brussels:()=>`${snow()}${moon}<path class="s" d="M50 150V104L60 96H240L250 104V150Z"/><rect class="s" x="138" y="58" width="24" height="46"/><path class="s" d="M136 58L150 10L164 58Z"/><rect class="s" x="149" y="2" width="2" height="10"/>${win(60,108,8,3,10,13,4,7)}${win(170,108,7,3,10,13,4,7)}${win(144,66,2,2,8,14,4,8)}<path class="s2" d="M260 150V110L270 98L280 110L290 98L300 110V150Z"/>${ground}`,
+  canal:()=>`${snow()}${moon}${[[20,96,34,"s"],[54,84,30,"s2"],[84,100,32,"s"],[116,78,30,"s2"],[146,92,34,"s"],[180,86,30,"s2"],[210,102,30,"s"]].map(([x,y,w,c])=>`<path class="${c}" d="M${x} 140V${y+14}H${x+5}V${y+7}H${x+10}V${y}H${x+w-10}V${y+7}H${x+w-5}V${y+14}H${x+w}V140Z"/>${win(x+7,y+20,2,3,w-18,12,5,7)}`).join("")}<rect class="s" x="0" y="140" width="400" height="4"/><rect class="wt" x="0" y="144" width="400" height="26"/><path class="gl" d="M30 152H60M100 156H140M180 151H205M250 158H290M330 153H360" opacity=".7"/><path class="s" d="M260 148L270 156H330L338 148Z"/>`,
+  windmill:()=>{const mill=(x,sc,rot)=>`<g transform="translate(${x} 150) scale(${sc})"><path class="s" d="M-20 0L-12 -62H12L20 0Z"/><path class="s" d="M-15 -62L0 -76L15 -62Z"/><path class="w" d="M-4 0V-12A4 4 0 0 1 4 -12V0Z"/><g transform="translate(0 -66) rotate(${rot})">${[0,90,180,270].map(a=>`<g transform="rotate(${a})"><rect class="s" x="-2" y="-62" width="4" height="62"/><rect class="s2" x="2" y="-58" width="10" height="44"/></g>`).join("")}</g></g>`;return `${snow()}${moon}${mill(70,.55,20)}${mill(160,1,8)}${mill(250,.7,35)}<rect class="wt" x="0" y="148" width="400" height="22"/><path class="s" d="M0 148H400V151H0Z"/>`;},
+  rotterdam:()=>`${snow()}${moon}${[60,96,132,168].map((x,i)=>`<rect class="s" x="${x+14}" y="118" width="6" height="32"/><rect class="${i%2?"s2":"s"}" x="${x}" y="88" width="34" height="34" transform="rotate(45 ${x+17} 105)"/><rect class="w" x="${x+14}" y="98" width="6" height="6"/>`).join("")}<path class="s" d="M290 150V24L296 22V150Z"/><path class="ln" d="M293 30L220 132M293 30L240 132M293 30L260 132M293 30L330 132M293 30L350 132"/><rect class="s" x="210" y="130" width="160" height="5"/>${ground}`,
+  giethoorn:(fx)=>`${snow()}${fx?fw(70,36,20)+fw(300,40,14)+fw(230,24,10):moon}<path class="s" d="M80 120L135 70L190 120Z"/><rect class="s" x="92" y="118" width="86" height="26"/><path class="w" d="M104 126h10v10h-10zM156 126h10v10h-10z"/><path class="s2" d="M200 124L228 98L256 124Z"/><rect class="s2" x="206" y="122" width="44" height="22"/><path class="s" d="M40 142L60 132H70L72 142ZM20 144C40 130 60 128 80 144"/><rect class="wt" x="0" y="144" width="400" height="26"/><path class="ln" d="M260 144Q290 124 320 144"/><path class="s" d="M150 154L156 160H196L202 154Z"/><path class="gl" d="M40 156H80M220 160H260M320 154H350" opacity=".7"/>`,
+  rijks:()=>`${snow()}${moon}<path class="s" d="M40 150V100H260V150Z"/><rect class="s" x="118" y="58" width="22" height="42"/><path class="s" d="M116 58L129 30L142 58Z"/><rect class="s" x="160" y="58" width="22" height="42"/><path class="s" d="M158 58L171 30L184 58Z"/><path class="s" d="M140 100V78H160V100Z"/><path class="w" d="M138 150V130A12 12 0 0 1 162 130V150Z"/>${win(48,108,7,2,10,16,5,9)}${win(186,108,7,2,10,16,5,9)}${win(124,66,1,2,0,14,10,8)}${win(166,66,1,2,0,14,10,8)}${ground}`,
+  plane:()=>`${snow()}${moon}<g transform="translate(150 70) rotate(-14)"><path class="s" d="M-70 0C-70 -7 -60 -9 -50 -9H50C62 -9 72 -4 76 0C72 4 62 6 50 6H-50C-60 6 -70 5 -70 0Z"/><path class="s" d="M-6 -6L-30 -44H-18L18 -6ZM-6 4L-24 34H-12L18 4ZM-62 -6L-74 -26H-66L-50 -8Z"/>${[ -40,-30,-20,-10,0,10,20,30].map(x=>`<circle class="w" cx="${x}" cy="-2" r="1.6"/>`).join("")}</g><path class="s" d="M0 150H400V170H0Z"/><path class="gl" d="M20 158H60M100 158H140M180 158H220M260 158H300M340 158H380"/><path class="s2" d="M250 150V118H380V150Z"/><rect class="s" x="290" y="96" width="10" height="22"/><rect class="s2" x="284" y="88" width="22" height="10"/>${win(258,126,12,1,10,0,6,8)}`
+};
+const artTag = k => { if(!k) return ""; const fx=k.endsWith("*"); const f=ART[k.replace("*","")]; return f?`<div class="art" aria-hidden="true"><svg viewBox="0 0 400 170" preserveAspectRatio="xMinYMax slice">${f(fx)}</svg></div>`:""; };
+const coverArt = (img,art) => img ? imgTag(img) : artTag(art);
+/* اربط كل تاريخ برسمة من illustrations.js · النجمة = ألعاب نارية */
+const ARTMAP = {"2026-12-18":"chateau","2026-12-19":"chateau*","2026-12-20":"castle","2026-12-21":"castle*","2026-12-22":"arc","2026-12-23":"eiffel","2026-12-24":"louvre","2026-12-25":"sacre","2026-12-26":"versailles","2026-12-27":"brussels","2026-12-28":"canal","2026-12-29":"windmill","2026-12-30":"rotterdam","2026-12-31":"giethoorn*","2027-01-01":"rijks","2027-01-02":"plane"};
+const DAYNAMES=["الأول","الثاني","الثالث","الرابع","الخامس","السادس","السابع","الثامن","التاسع","العاشر","الحادي عشر","الثاني عشر","الثالث عشر","الرابع عشر","الخامس عشر","السادس عشر"];
+const ar = n => String(n).replace(/\d/g,d=>"٠١٢٣٤٥٦٧٨٩"[d]);
+
+/* ---------- storage (on-device) ---------- */
+const KEY="rt-"+TRIP.id;
+let S={done:{}};
+try{const v=localStorage.getItem(KEY); if(v) S=Object.assign(S,JSON.parse(v));}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}};
+
+/* ---------- dates ---------- */
+const dt=s=>{const [y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d);};
+const now=new Date(); const today=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+const params=new URLSearchParams(location.search);
+const startD=dt(TRIP.start), endD=dt(TRIP.end);
+const expireD=new Date(endD); expireD.setDate(expireD.getDate()+TRIP.expireAfterDays+1);
+if(params.get("expired")==="1" || today>=expireD) document.body.classList.add("is-expired");
+
+let todayIdx=TRIP.days.findIndex(x=>dt(x.d).getTime()===today.getTime());
+let sel = todayIdx>=0 ? todayIdx : 0;
+
+/* status */
+(function(){
+  const st=document.getElementById("status"), N=TRIP.days.length;
+  const diff=Math.round((startD-today)/864e5);
+  if(diff>0) st.innerHTML=`<b>${ar(diff)}</b><span>${diff===1?"يوم":diff===2?"يومين":diff<=10?"أيام":"يوم"} وتبدأ رحلتك</span>`;
+  else if(todayIdx>=0) st.innerHTML=`<b>${ar(todayIdx+1)}</b><span>اليوم ${DAYNAMES[todayIdx]} من ${ar(N)} يوم</span>`;
+  else st.innerHTML=`<span>انتهت الرحلة</span>`;
+  const cur = todayIdx<0 ? -1 : TRIP.days[todayIdx].st;
+  document.getElementById("route").innerHTML=TRIP.route.map((c,i)=>`<i class="${i===cur?"on":""}">${c}</i>`).join("");
+})();
+
+/* ---------- plan ---------- */
+const iid=(di,ii)=>di+"-"+ii;
+const check='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>';
+function dayStats(di){const it=TRIP.days[di].items;const d=it.filter((_,ii)=>S.done[iid(di,ii)]).length;return [d,it.length];}
+
+function renderStrip(){
+  document.getElementById("days").innerHTML=TRIP.days.map((x,i)=>{
+    const [d,t]=dayStats(i); const dd=dt(x.d);
+    return `<button class="chip ${i===sel?"sel":""} ${i===todayIdx?"today":""} ${d===t&&t?"full":""}" data-i="${i}"><small>${ar(dd.getDate())}/${ar(dd.getMonth()+1)}</small><strong>${ar(i+1)}</strong></button>`;
+  }).join("");
+  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{sel=+b.dataset.i;render();});
+  const c=document.querySelector(".chip.sel"); if(c) c.scrollIntoView({inline:"center",block:"nearest"});
+}
+
+function itemHTML(it,id){
+  const done=!!S.done[id];
+  const links=(it.l||[]).map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join("");
+  return `<li class="item ${done?"done":""}">
+    <button class="ck" data-id="${id}" aria-label="${done?"إلغاء":"تم"}: ${it.t}" aria-pressed="${done}">${check}</button>
+    <div class="body"><div class="t">${it.t}${it.opt?'<span class="opt">اختياري</span>':""}</div>
+    ${it.n?`<div class="note">${it.n}</div>`:""}
+    ${links?`<div class="links">${links}</div>`:""}
+    </div></li>`;
+}
+
+function render(){
+  renderStrip();
+  const di=sel, day=TRIP.days[di], dd=dt(day.d);
+  const [d,t]=dayStats(di);
+  const food=day.food.length?`<div class="group-t">المطاعم والكافيهات</div><div class="food">${day.food.map(([n,u])=>`<a href="${u}" target="_blank" rel="noopener">${n}</a>`).join("")}</div>`:"";
+  document.getElementById("day").innerHTML=`
+    <div class="cover">${coverArt(day.img,ARTMAP[day.d])}<div class="cap"><small>${day.city}</small><b>اليوم ${DAYNAMES[di]}</b></div></div>
+    <div class="dayhead"><div><div class="city">${ar(dd.getDate())}/${ar(dd.getMonth()+1)}/${ar(dd.getFullYear())}</div></div>
+      <div class="prog">${ar(d)} من ${ar(t)}<div class="bar"><div style="width:${t?d/t*100:0}%"></div></div></div></div>
+    <div class="intro">${day.intro}</div>
+    <div class="group-t">الجدول والفعاليات</div>
+    <ul class="list">${day.items.map((it,ii)=>itemHTML(it,iid(di,ii))).join("")}</ul>
+    ${food}`;
+  document.querySelectorAll(".ck").forEach(b=>b.onclick=()=>{const id=b.dataset.id; if(S.done[id]) delete S.done[id]; else S.done[id]=1; save(); render();});
+}
+
+/* ---------- stays / flights / tips ---------- */
+const STAYART=["chateau","castle","arc","canal"];
+document.getElementById("stay").innerHTML=TRIP.stays.map((s,i)=>`<div class="card"><div class="ph" style="position:relative">${coverArt(s.img,STAYART[i])}</div>
+  <div class="city-t">${s.city} · ${s.n}</div><h3>${s.name}</h3>
+  <div class="meta">الدخول ${s.in} · الخروج ${s.out}</div>
+  <div class="meta" style="direction:ltr;text-align:right">${s.addr}</div>
+  ${s.note?`<div class="meta">${s.note}</div>`:""}
+  <a class="btn" href="${s.map}" target="_blank" rel="noopener">افتح الموقع</a></div>`).join("");
+
+const TRANSFERS=[
+ ["مطار شارل ديغول ← قصر Challain","١٨ ديسمبر · ٣ ساعات ونص"],
+ ["القصر ← فندق Newport Bay في ديزني","٢٠ ديسمبر · ٤ ساعات"],
+ ["ديزني ← فندق Rochester في باريس","٢٢ ديسمبر · ساعة"],
+ ["باريس ← فندق Park Plaza Victoria في أمستردام","٢٧ ديسمبر · ٥ ساعات ونص"],
+ ["رحلات يومية من أمستردام","٢٩ و٣٠ و٣١ ديسمبر"],
+ ["الفندق ← مطار Schiphol","٢ يناير · ٢٥ دقيقة"]
+];
+document.getElementById("fly").innerHTML=`
+ <div class="card"><div class="city-t">رحلة الذهاب · ١٨ ديسمبر ٢٠٢٦ <span class="fno">QR41</span></div>
+  <div class="flight" style="margin-top:10px"><div class="ap"><b>الدوحة</b><small>مطار حمد الدولي · ١:٢٥ ص</small></div><div class="ln"></div><div class="ap" style="text-align:left"><b>باريس</b><small>Charles de Gaulle · ٦:٣٥ ص</small></div></div></div>
+ <div class="card"><div class="city-t">رحلة العودة · ٢ يناير ٢٠٢٧ <span class="fno">QR274</span></div>
+  <div class="flight" style="margin-top:10px"><div class="ap"><b>أمستردام</b><small>Schiphol · ٤:١٥ م</small></div><div class="ln"></div><div class="ap" style="text-align:left"><b>الدوحة</b><small>مطار حمد الدولي · ١١:٣٥ م</small></div></div>
+  <div class="meta" style="margin-top:8px">ننصح بالتواجد في المطار قبل الإقلاع بـ ٣ ساعات على الأقل.</div></div>
+ <div class="card"><div class="city-t" style="margin-bottom:4px">التنقلات مع السائق الخاص</div>
+  ${TRANSFERS.map(([a,b])=>`<div class="tr"><span>${a}</span><small>${b}</small></div>`).join("")}</div>`;
+
+const TIPS=[
+ ["عام",[["مواعيد الفعاليات","تأكد من أيام وساعات العمل قبل الذهاب، المواعيد ممكن تتغير خصوصاً في الأعياد."],["الأمان","انتبه من السرقات في الأماكن المزدحمة، خصوصاً محطات المترو وأماكن السياح، ولا تحط أشياء مهمة بشنطة الظهر."],["الأجهزة والشحن","أفياش كهرباء أوروبية وشاحن متنقل."],["الطعام","تأكد من أوقات عمل المطاعم ومن خلو الأطباق من الكحول ولحم الخنزير."],["مرونة الجدول","تقدر تغيّر ترتيب الأيام أو تدمج أنشطة حسب الحجوزات والوقت."]]],
+ ["الجو في ديسمبر",[["البرد","الحرارة بين ٢ و٨ درجات تقريباً مع مطر وهوا، خذوا جاكيتات ثقيلة ومظلة وأحذية مريحة للمشي."],["النهار قصير","الشمس تغيب حوالي الساعة ٥ في باريس و٤:٣٠ في أمستردام، رتب الأماكن المفتوحة بالصبح."]]],
+ ["الكريسماس ورأس السنة",[["٢٤ و٣١ ديسمبر","المحلات تسكر بدري، احجز مطاعم العشاء مسبقاً."],["٢٥ ديسمبر و١ يناير","أغلب المتاحف والمحلات مسكرة، رتبنا لك أنشطة مفتوحة في هالأيام."],["الحجوزات","برج إيفل واللوفر وفرساي ومتاحف أمستردام تحتاج حجز مسبق، والتذاكر تخلص بسرعة في موسم الأعياد."]]],
+ ["ديزني",[["التطبيق","حمّل تطبيق Disneyland Paris لمواعيد العروض وأوقات الانتظار."],["Premier Access","تقدر تشتري تذاكر تختصر الطوابير للألعاب المزدحمة."],["البداية","كن عند البوابة قبل الافتتاح بنص ساعة."]]],
+ ["السائق الخاص",[["التواصل","احفظ رقم السائق وأرسل له موقعك قبل الموعد بوقت كافي."],["الالتزام بالوقت","التزم بمواعيد الاستلام المتفق عليها، والتأخير ممكن ينحسب بتكلفة إضافية."],["المقتنيات","لا تترك أشياء مهمة في السيارة بعد النزول."]]],
+ ["التنقل داخل المدن",[["المترو والقطار","في باريس المترو أسرع طريقة للتنقل، وفي أمستردام الترام. تقدر تدفع بالبطاقة البنكية مباشرة."],["الدراجات في أمستردام","انتبه لمسارات الدراجات الحمراء، لا تمشي فيها لأن الدراجات سريعة جداً."]]]
+];
+document.getElementById("tips").innerHTML=TIPS.map(([h,arr])=>`<div class="card"><div class="city-t" style="margin-bottom:4px">${h}</div>${arr.map(([b,p])=>`<div class="tip"><div><b>${b}</b><p>${p}</p></div></div>`).join("")}</div>`).join("");
+
+/* ---------- tabs ---------- */
+document.querySelectorAll("nav.tabs button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav.tabs button").forEach(x=>x.classList.toggle("on",x===b));
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("on",v.id==="v-"+b.dataset.v));
+  window.scrollTo({top:0});
+});
+
+/* ---------- robust external links ---------- */
+function toast(m){const t=document.getElementById("toast");t.textContent=m;t.classList.add("on");clearTimeout(toast.h);toast.h=setTimeout(()=>t.classList.remove("on"),2600);}
+document.addEventListener("click",e=>{
+  const a=e.target.closest("a[href^='http']"); if(!a) return;
+  e.preventDefault(); const u=a.href;
+  let w=null; try{w=window.open(u,"_blank","noopener");}catch(_){}
+  if(w) return;
+  try{window.top.location.href=u;return;}catch(_){}
+  try{location.href=u;return;}catch(_){}
+  if(navigator.clipboard) navigator.clipboard.writeText(u).then(()=>toast("انسخ الرابط والصقه بالمتصفح، تم نسخه"));
+});
+render();
+</script>
+</body>
+</html>

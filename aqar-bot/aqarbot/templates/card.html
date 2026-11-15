@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<style>
+{{ fonts_css | safe }}
+:root {
+  --c: {{ color }};
+  --c-soft: color-mix(in srgb, var(--c) 9%, #fff);
+  --c-line: color-mix(in srgb, var(--c) 22%, #fff);
+  --ink: #1d232b;
+  --muted: #5b6573;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1350px; }
+body {
+  font-family: 'Tajawal', sans-serif; color: var(--ink); background: #fff;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+@page { size: 1080px 1350px; margin: 0; }
+
+.photos { position: relative; display: grid; gap: 8px; flex: 1; min-height: 640px; background: #fff; }
+.ph { background-size: cover; background-position: center; background-color: #e9edf1; }
+.p1 { grid-template: 1fr / 1fr; }
+.p2 { grid-template-columns: 2fr 1fr; }
+.p3 { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
+.p3 .ph:first-child { grid-row: span 2; }
+.p4 { grid-template-columns: repeat(3, 1fr); grid-template-rows: 2.3fr 1fr; }
+.p4 .ph:first-child { grid-column: span 3; }
+.p5 { grid-template-columns: repeat(4, 1fr); grid-template-rows: 2.3fr 1fr; }
+.p5 .ph:first-child { grid-column: span 4; }
+.p0 { grid-template: 1fr / 1fr; }
+.p0 .ph { background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 55%, #000)); }
+
+.badge {
+  position: absolute; top: 36px; right: 36px;
+  background: var(--c); color: #fff; font-weight: 800; font-size: 40px;
+  padding: 14px 36px 10px; border-radius: 999px; box-shadow: 0 6px 20px rgba(0,0,0,.25);
+}
+.ref {
+  position: absolute; top: 40px; left: 36px;
+  background: rgba(255,255,255,.92); color: var(--ink); font-weight: 700; font-size: 26px;
+  padding: 10px 22px 6px; border-radius: 999px;
+}
+
+.content { flex: none; padding: 38px 52px 40px; display: flex; flex-direction: column; gap: 26px; }
+.head { display: flex; align-items: flex-start; justify-content: space-between; gap: 28px; }
+.title { font-size: 54px; font-weight: 800; line-height: 1.25; }
+.title small { display: block; font-size: 32px; font-weight: 700; color: var(--muted); margin-top: 6px; }
+.price {
+  flex-shrink: 0; text-align: center; background: var(--c-soft); border: 2px solid var(--c-line);
+  border-radius: 24px; padding: 16px 28px 10px; min-width: 260px;
+}
+.price b { display: block; font-size: 52px; font-weight: 800; color: var(--c); line-height: 1.15; white-space: nowrap; }
+.price span { font-size: 26px; color: var(--muted); font-weight: 700; }
+
+.specs { display: flex; gap: 16px; }
+.spec {
+  display: flex; align-items: center; gap: 14px; background: #f4f6f8; border-radius: 18px;
+  padding: 14px 24px 10px; font-size: 32px; font-weight: 700;
+}
+.spec svg { width: 38px; height: 38px; stroke: var(--c); fill: none; stroke-width: 2; margin-top: -4px; }
+
+.features { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 28px; }
+.feature { display: flex; align-items: center; gap: 12px; font-size: 30px; font-weight: 700; color: #333b45; }
+.feature i {
+  flex-shrink: 0; width: 30px; height: 30px; border-radius: 50%; background: var(--c);
+  display: grid; place-items: center; margin-top: -4px;
+}
+.feature i svg { width: 18px; height: 18px; stroke: #fff; stroke-width: 3.2; fill: none; }
+
+.footer {
+  flex: none; height: 132px; background: var(--c); color: #fff;
+  display: flex; align-items: center; gap: 26px; padding: 0 52px;
+}
+.logo {
+  width: 92px; height: 92px; border-radius: 50%; background: #fff center / contain no-repeat;
+  flex-shrink: 0; border: 4px solid rgba(255,255,255,.6);
+}
+.office { flex: 1; font-size: 40px; font-weight: 800; }
+.phone {
+  display: flex; align-items: center; gap: 14px; font-size: 44px; font-weight: 800;
+  direction: ltr; background: rgba(255,255,255,.14); padding: 14px 28px 8px; border-radius: 999px;
+}
+.phone svg { width: 40px; height: 40px; fill: #fff; margin-top: -6px; }
+</style>
+</head>
+<body>
+  <div class="photos p{{ photos | length }}">
+    {% for p in photos %}<div class="ph" style="background-image:url('{{ p }}')"></div>{% endfor %}
+    {% if not photos %}<div class="ph"></div>{% endif %}
+    <div class="badge">{{ deal_label }}</div>
+    <div class="ref">رقم {{ "%03d" | format(number) }}</div>
+  </div>
+
+  <div class="content">
+    <div class="head">
+      <div class="title">{{ title }}<small>{{ location }}</small></div>
+      <div class="price"><b>{{ price_text }}</b>{% if price_suffix %}<span>{{ price_suffix }}</span>{% endif %}</div>
+    </div>
+
+    {% if specs %}
+    <div class="specs">
+      {% for s in specs %}
+      <div class="spec">
+        {% if s.icon == 'size' %}<svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h4M3 15h4M9 3v4M15 3v4"/></svg>
+        {% elif s.icon == 'bed' %}<svg viewBox="0 0 24 24"><path d="M2 18V6M2 14h20v4M22 14v-3a3 3 0 0 0-3-3h-8v6"/><circle cx="6.5" cy="10.5" r="2"/></svg>
+        {% elif s.icon == 'bath' %}<svg viewBox="0 0 24 24"><path d="M3 12h18v3a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5v-3zM6 12V5a2 2 0 0 1 4 0M7 20l-1 2M17 20l1 2"/></svg>
+        {% else %}<svg viewBox="0 0 24 24"><path d="M3 21V9l9-6 9 6v12M9 21v-6h6v6"/></svg>{% endif %}
+        {{ s.label }}
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if features %}
+    <div class="features">
+      {% for f in features %}
+      <div class="feature"><i><svg viewBox="0 0 24 24"><path d="M5 12l5 5 9-10"/></svg></i>{{ f }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="footer">
+    {% if logo %}<div class="logo" style="background-image:url('{{ logo }}')"></div>{% endif %}
+    <div class="office">{{ office_name }}</div>
+    <div class="phone">
+      <svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.2z"/></svg>
+      {{ office_phone }}
+    </div>
+  </div>
+</body>
+</html>

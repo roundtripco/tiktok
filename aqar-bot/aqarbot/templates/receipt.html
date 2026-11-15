@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<style>
+{{ fonts_css | safe }}
+:root {
+  --c: {{ color }};
+  --c-soft: color-mix(in srgb, var(--c) 8%, #fff);
+  --c-line: color-mix(in srgb, var(--c) 25%, #fff);
+  --ink: #1d232b;
+  --muted: #5f6977;
+}
+@page { size: A5; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 148mm; height: 210mm; }
+body {
+  font-family: 'Tajawal', sans-serif; color: var(--ink); background: #fff;
+  padding: 11mm 11mm 9mm; display: flex; flex-direction: column; font-size: 12.5pt;
+  position: relative; overflow: hidden;
+}
+body::before {
+  content: ""; position: absolute; inset: 0 0 auto 0; height: 4.5mm; background: var(--c);
+}
+.top { display: flex; align-items: center; gap: 4mm; padding-bottom: 5mm; border-bottom: 1.5px solid var(--c-line); }
+.logo { width: 17mm; height: 17mm; border-radius: 50%; background: #fff center / contain no-repeat; border: 1px solid var(--c-line); flex-shrink: 0; }
+.office { flex: 1; }
+.office b { display: block; font-size: 16pt; font-weight: 800; }
+.office span { color: var(--muted); font-size: 10.5pt; direction: ltr; unicode-bidi: embed; }
+.doc { text-align: left; }
+.doc b { display: block; font-size: 18pt; font-weight: 800; color: var(--c); text-align: right; }
+.doc span { display: block; font-size: 9.5pt; color: var(--muted); text-align: right; }
+
+.meta { display: flex; justify-content: space-between; margin: 5mm 0 4mm; font-size: 11pt; }
+.meta div { background: #f4f6f8; border-radius: 2mm; padding: 2mm 3.5mm 1.2mm; }
+.meta b { font-weight: 800; }
+
+.amount {
+  display: flex; align-items: center; justify-content: space-between; background: var(--c-soft);
+  border: 1.5px solid var(--c-line); border-radius: 3mm; padding: 4mm 5mm 3mm; margin-bottom: 5mm;
+}
+.amount span { font-size: 11pt; color: var(--muted); font-weight: 700; }
+.amount b { font-size: 22pt; font-weight: 800; color: var(--c); white-space: nowrap; }
+
+.rows { display: flex; flex-direction: column; gap: 3.6mm; }
+.row { display: flex; gap: 3mm; align-items: baseline; }
+.row label { flex-shrink: 0; width: 27mm; color: var(--muted); font-weight: 700; font-size: 11pt; }
+.row div { flex: 1; font-weight: 700; border-bottom: 1px dotted #b9c0c9; padding-bottom: 1.2mm; line-height: 1.5; }
+
+.sign { margin-top: auto; display: flex; justify-content: space-between; align-items: flex-end; padding-top: 6mm; }
+.sign > div:first-child { display: flex; flex-direction: column; align-items: flex-start; }
+.sign .who { font-size: 10.5pt; color: var(--muted); }
+.sign .who b { display: block; color: var(--ink); font-size: 12pt; margin-top: 1mm; }
+.sign .line { width: 45mm; border-top: 1px solid #8a939e; margin-top: 10mm; padding-top: 1mm; text-align: center; font-size: 9.5pt; color: var(--muted); }
+.stamp {
+  width: 27mm; height: 27mm; border-radius: 50%; border: 2px solid var(--c); color: var(--c);
+  display: grid; place-items: center; text-align: center; font-weight: 800; font-size: 8.5pt;
+  line-height: 1.35; padding: 3mm; opacity: .75; transform: rotate(-12deg);
+  box-shadow: inset 0 0 0 1.6mm #fff, inset 0 0 0 2.1mm var(--c);
+}
+.foot { margin-top: 5mm; text-align: center; font-size: 8.5pt; color: #8a939e; }
+</style>
+</head>
+<body>
+  <div class="top">
+    {% if logo %}<div class="logo" style="background-image:url('{{ logo }}')"></div>{% endif %}
+    <div class="office"><b>{{ office_name }}</b><span>{{ office_phone }}</span></div>
+    <div class="doc"><b>سند قبض</b><span>Receipt Voucher</span></div>
+  </div>
+
+  <div class="meta">
+    <div>رقم السند: <b>{{ "%04d" | format(number) }}</b></div>
+    <div>التاريخ: <b>{{ date }}</b></div>
+  </div>
+
+  <div class="amount"><span>المبلغ</span><b>{{ amount }}</b></div>
+
+  <div class="rows">
+    <div class="row"><label>استلمنا من</label><div>{{ payer }}</div></div>
+    <div class="row"><label>مبلغاً وقدره</label><div>{{ amount_words }}</div></div>
+    <div class="row"><label>وذلك عن</label><div>{{ reason }}</div></div>
+    <div class="row"><label>طريقة الدفع</label><div>{{ method }}</div></div>
+    {% if notes %}<div class="row"><label>ملاحظات</label><div>{{ notes }}</div></div>{% endif %}
+  </div>
+
+  <div class="sign">
+    <div>
+      <div class="who">المستلم<b>{{ receiver }}</b></div>
+      <div class="line">التوقيع</div>
+    </div>
+    <div class="stamp">{{ office_name }}</div>
+  </div>
+
+  <div class="foot">صدر إلكترونياً عبر {{ service_name }}</div>
+</body>
+</html>

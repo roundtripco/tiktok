@@ -1,0 +1,16 @@
+[Unit]
+Description=Aqar office Telegram bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=aqarbot
+WorkingDirectory=/opt/aqar-bot
+ExecStart=/opt/aqar-bot/.venv/bin/python -m aqarbot
+Restart=always
+RestartSec=5
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

@@ -43,6 +43,7 @@ body { font-family: 'Tajawal', sans-serif; background: #eef3f0; color: var(--ink
 .btns { display: grid; gap: 10px; margin-top: 16px; }
 .btns.c2 { grid-template-columns: 1fr 1fr; }
 .btns.c3 { grid-template-columns: 1fr 1fr 1fr; }
+.btns.c3 span { font-size: 28px; white-space: nowrap; }
 .btns span {
   background: #eef3f0; color: var(--c-dark); border-radius: 18px; text-align: center;
   padding: 14px 10px 8px; font-size: 31px; font-weight: 800; transition: none;
@@ -133,15 +134,16 @@ body { font-family: 'Tajawal', sans-serif; background: #eef3f0; color: var(--ink
 
   <div class="chat" data-show="14.4,22.4">
     <div class="msg out" data-t="14.6">🧾 سند قبض</div>
-    <div class="msg in" data-t="15.0">نوع السند:<div class="btns c3"><span>إيجار</span><span data-press="15.6">عربون</span><span>عمولة</span><span>دفعة بيع</span><span>تأمين</span><span>أخرى</span></div></div>
-    <div class="msg in" data-t="16.0">🏠 العربون عن أي عقار؟</div>
-    <div class="msg out" data-t="16.4">شقة ٥ - عمارة ١٢ السالمية</div>
-    <div class="msg in" data-t="16.8">👤 استلمنا من:</div>
-    <div class="msg out" data-t="17.2">محمد عبدالله الكندري</div>
-    <div class="msg in" data-t="17.6">💵 المبلغ؟</div>
-    <div class="msg out" data-t="18.0">350.500</div>
-    <div class="msg in" data-t="18.4">طريقة الدفع:<div class="btns c3"><span>نقداً</span><span data-press="18.9">كي نت</span><span>تحويل</span></div></div>
-    <div class="msg in doc" data-t="19.3"><i><svg><use href="#pdf"/></svg></i><div><b>سند قبض رقم 0001</b><small>PDF · 350.500 د.ك</small></div></div>
+    <div class="msg in" data-t="15.0">نوع السند:<div class="btns c3"><span data-press="15.6">إيجار</span><span>عربون</span><span>عمولة</span><span>دفعة بيع</span><span>تأمين</span><span>أخرى</span></div></div>
+    <div class="msg in" data-t="16.0">📅 إيجار أي شهر؟<div class="btns c3"><span>أكتوبر 2026</span><span data-press="16.5">نوفمبر 2026</span><span>ديسمبر 2026</span></div></div>
+    <div class="msg in" data-t="16.9">🏠 العقار أو الوحدة؟</div>
+    <div class="msg out" data-t="17.2">عمارة ١٢ - شقة ٥</div>
+    <div class="msg in" data-t="17.6">👤 استلمنا من:</div>
+    <div class="msg out" data-t="17.9">أحمد السالم</div>
+    <div class="msg in" data-t="18.2">💵 المبلغ؟</div>
+    <div class="msg out" data-t="18.5">350</div>
+    <div class="msg in" data-t="18.8">طريقة الدفع:<div class="btns c3"><span data-press="19.2">نقداً</span><span>كي نت</span><span>تحويل</span></div></div>
+    <div class="msg in doc" data-t="19.5"><i><svg><use href="#pdf"/></svg></i><div><b>سند قبض رقم 0005</b><small>PDF · 350 د.ك</small></div></div>
   </div>
 
   <div class="chat" data-show="22.4,28.4">
@@ -156,7 +158,7 @@ body { font-family: 'Tajawal', sans-serif; background: #eef3f0; color: var(--ink
   <div class="overlay" data-show="12.3,14.4" data-zoom="12.3">
     <div class="frame"><img src="{{ card }}"></div>
   </div>
-  <div class="overlay" data-show="19.9,22.4" data-zoom="19.9">
+  <div class="overlay" data-show="20.1,22.4" data-zoom="20.1">
     <div class="frame"><img src="{{ receipt }}"></div>
   </div>
   <div class="overlay" data-show="24.5,28.4" data-zoom="24.5">

@@ -98,7 +98,7 @@ async def main() -> None:
         cta="👆 الرابط في البايو",
         photos=[data_uri(scenes[k]) for k in ("living", "kitchen", "bedroom", "building")],
         card=data_uri((ROOT / "samples" / "card-rent.jpg").read_bytes()),
-        receipt=data_uri(pdf_to_png(ROOT / "samples" / "receipt.pdf"), "image/png"),
+        receipt=data_uri(pdf_to_png(ROOT / "samples" / "receipt-rent.pdf"), "image/png"),
     )
 
     from playwright.async_api import async_playwright
@@ -120,7 +120,7 @@ async def main() -> None:
             await page.evaluate(f"render({t})")
             frame = await page.screenshot(type="jpeg", quality=95)
             ffmpeg.stdin.write(frame)
-            if i in (int(2 * FPS), int(13.5 * FPS), int(19.5 * FPS), int(21.5 * FPS), int(27 * FPS), int(31 * FPS)):
+            if i in (int(2 * FPS), int(13.5 * FPS), int(19.7 * FPS), int(21.8 * FPS), int(27 * FPS), int(31 * FPS)):
                 (OUT / f"frame-{t:04.1f}s.jpg").write_bytes(frame)
         await browser.close()
     ffmpeg.stdin.close()

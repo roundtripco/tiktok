@@ -313,7 +313,7 @@ footer .wrap { padding-block: 26px; color: var(--muted); font-size: 14px; text-a
     <h2>جرّبه على مكتبك ١٤ يوم</h2>
     <p>افتح البوت في تيليجرام واضغط «تسجيل مكتب جديد».</p>
     <a class="btn primary js-start" href="#join">افتح البوت</a>
-    <p>أو ابحث في تيليجرام عن: <span class="handle js-handle">@اسم_البوت</span></p>
+    <p>أو ابحث في تيليجرام عن: <span class="handle js-handle">@AqarOfficeBot</span></p>
   </div>
 </section>
 
@@ -322,7 +322,7 @@ footer .wrap { padding-block: 26px; color: var(--muted); font-size: 14px; text-a
 
 <script>
   // يتعبّى بعد إنشاء البوت في BotFather
-  const BOT_USERNAME = "";
+  const BOT_USERNAME = "AqarOfficeBot";
   if (BOT_USERNAME) {
     document.querySelectorAll(".js-start").forEach((a) => { a.href = `https://t.me/${BOT_USERNAME}`; });
     document.querySelectorAll(".js-handle").forEach((s) => { s.textContent = `@${BOT_USERNAME}`; });

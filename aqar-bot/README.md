@@ -49,3 +49,12 @@ aqarbot/
   templates/      قوالب البطاقة والسند
   fonts/          خط Tajawal (رخصة OFL)
 ```
+
+## التسويق (المرحلة ٢)
+```
+marketing/outreach.md     رسائل التواصل مع المكاتب، والردود على الاعتراضات، ونص منشور الفيديو
+marketing/make_video.py   يصنع الفيديو التعريفي (عمودي ٣٠ ثانية) من عينات البوت
+site/                     صفحة الخدمة مع الفيديو والعينات
+```
+لإعادة صنع الفيديو: `python marketing/make_video.py` (يحتاج ffmpeg)، والفيديو يطلع في `marketing/out/demo.mp4`.
+رابط البوت في الصفحة يتعبّى من `BOT_USERNAME` آخر `site/index.html`.

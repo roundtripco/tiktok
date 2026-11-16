@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<style>
+{{ fonts_css | safe }}
+:root { --c: #1E6B52; --c-dark: #134937; --ink: #1d232b; --muted: #6b7480; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 1080px; height: 1920px; overflow: hidden; }
+body { font-family: 'Tajawal', sans-serif; background: #eef3f0; color: var(--ink); position: relative; }
+
+.caption {
+  position: absolute; top: 96px; left: 60px; right: 60px; height: 190px;
+  display: grid; place-items: center; text-align: center;
+}
+.caption div { position: absolute; font-size: 74px; font-weight: 800; line-height: 1.2; color: var(--ink); }
+.caption div span { color: var(--c); }
+
+.phone {
+  position: absolute; top: 320px; left: 90px; width: 900px; height: 1500px;
+  border-radius: 64px; background: #dfe9e4; overflow: hidden;
+  box-shadow: 0 40px 90px rgba(19, 73, 55, .25), 0 0 0 14px #1d232b;
+}
+.topbar {
+  position: absolute; top: 0; left: 0; right: 0; height: 150px; background: #fff;
+  display: flex; align-items: center; gap: 24px; padding: 30px 40px 0; z-index: 2;
+  border-bottom: 1px solid #d9e0dc;
+}
+.avatar { width: 84px; height: 84px; border-radius: 50%; background: var(--c); display: grid; place-items: center; }
+.avatar svg { width: 46px; height: 46px; fill: #fff; }
+.topbar b { display: block; font-size: 38px; font-weight: 800; }
+.topbar small { font-size: 27px; color: var(--muted); }
+
+.chat {
+  position: absolute; top: 150px; bottom: 140px; left: 0; right: 0; padding: 30px 34px;
+  display: none; flex-direction: column; justify-content: flex-end; gap: 18px;
+}
+.chat.on { display: flex; }
+.msg { max-width: 76%; font-size: 36px; line-height: 1.45; padding: 20px 28px 14px; border-radius: 34px; display: none; }
+.msg.on { display: block; }
+.in { align-self: flex-end; background: #fff; border-bottom-left-radius: 10px; }
+.out { align-self: flex-start; background: #d6f5c5; border-bottom-right-radius: 10px; font-weight: 700; }
+.btns { display: grid; gap: 10px; margin-top: 16px; }
+.btns.c2 { grid-template-columns: 1fr 1fr; }
+.btns.c3 { grid-template-columns: 1fr 1fr 1fr; }
+.btns span {
+  background: #eef3f0; color: var(--c-dark); border-radius: 18px; text-align: center;
+  padding: 14px 10px 8px; font-size: 31px; font-weight: 800; transition: none;
+}
+.btns span.pressed { background: var(--c); color: #fff; }
+.album.on { display: grid; }
+.album { grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; background: #d6f5c5; border-radius: 30px; }
+.album img { width: 100%; height: 150px; object-fit: cover; border-radius: 22px; display: block; }
+.media { padding: 8px; }
+.media img { width: 100%; border-radius: 26px; display: block; }
+.doc.on { display: flex; align-items: center; gap: 22px; }
+.doc i { width: 92px; height: 92px; border-radius: 50%; background: var(--c); display: grid; place-items: center; flex-shrink: 0; }
+.doc i svg { width: 46px; height: 46px; fill: #fff; }
+.doc b { display: block; font-size: 32px; }
+.doc small { color: var(--muted); font-size: 26px; }
+
+.inputbar {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 140px; background: #fff;
+  border-top: 1px solid #d9e0dc; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px 26px 30px;
+}
+.inputbar span { background: #eef3f0; border-radius: 18px; display: grid; place-items: center; font-size: 30px; font-weight: 800; color: var(--c-dark); }
+.inputbar span.pressed { background: var(--c); color: #fff; }
+
+.overlay {
+  position: absolute; inset: 0; display: none; place-items: center; z-index: 5;
+  background: rgba(16, 32, 26, .78);
+}
+.overlay.on { display: grid; }
+.overlay .frame { width: 800px; border-radius: 36px; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.45); background: #fff; }
+.overlay .frame img { width: 100%; display: block; }
+.wa { width: 820px; background: #efe7de; border-radius: 40px; padding: 40px 34px; }
+.wa .head { display: flex; align-items: center; gap: 18px; margin-bottom: 26px; font-size: 34px; font-weight: 800; color: #075e54; }
+.wa .head i { width: 64px; height: 64px; border-radius: 50%; background: #25d366; display: grid; place-items: center; }
+.wa .head i svg { width: 38px; height: 38px; fill: #fff; }
+.wa .bubble { background: #dcf8c6; border-radius: 26px; padding: 26px 30px 20px; font-size: 35px; line-height: 1.55; font-weight: 500; }
+
+.screen {
+  position: absolute; inset: 0; z-index: 10; display: none; flex-direction: column; align-items: center;
+  justify-content: center; text-align: center; padding: 0 80px; color: #fff;
+  background: radial-gradient(circle at 50% 30%, #2a8a6a, var(--c-dark));
+}
+.screen.on { display: flex; }
+.hook h1 { font-size: 104px; font-weight: 800; line-height: 1.25; }
+.hook p { font-size: 58px; font-weight: 700; margin-top: 50px; opacity: .92; line-height: 1.45; }
+.cta .logo { width: 170px; height: 170px; border-radius: 50%; background: #fff; display: grid; place-items: center; margin-bottom: 40px; }
+.cta .logo svg { width: 96px; height: 96px; fill: var(--c); }
+.cta h2 { font-size: 78px; font-weight: 800; }
+.cta ul { list-style: none; margin: 56px 0; display: grid; gap: 26px; font-size: 50px; font-weight: 700; }
+.cta .offer { background: #fff; color: var(--c-dark); border-radius: 999px; padding: 30px 64px 22px; font-size: 62px; font-weight: 800; }
+.cta .price { margin-top: 34px; font-size: 46px; font-weight: 700; opacity: .9; }
+.cta .bio { margin-top: 70px; font-size: 44px; font-weight: 800; opacity: .85; }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="house" viewBox="0 0 24 24"><path d="M12 3 2 11.5h3V21h5.5v-6h3v6H19v-9.5h3z"/></symbol>
+  <symbol id="pdf" viewBox="0 0 24 24"><path d="M6 2h8l6 6v14H6zM13 3.5V9h5.5"/></symbol>
+  <symbol id="wa" viewBox="0 0 24 24"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3.3-.7-2.8-1.1-4.5-3.9-4.7-4.1-.1-.2-1.1-1.5-1.1-2.8s.7-2 1-2.3c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.9 2.1c.1.2.1.4 0 .5l-.3.5-.4.5c-.1.1-.3.3-.1.6.2.3.8 1.3 1.7 2.1 1.2 1 2.1 1.3 2.4 1.5.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l2 1c.3.1.5.2.5.3.1.2.1.7-.1 1.2z"/></symbol>
+</svg>
+
+<div class="caption">
+  <div data-show="3,14.4">🏠 بطاقة عقار<br><span>خلال ثواني</span></div>
+  <div data-show="14.4,20">🧾 سند قبض<br><span>بضغطة زر</span></div>
+  <div data-show="20,26">⏰ تذكير الإيجارات<br><span>تلقائي</span></div>
+</div>
+
+<div class="phone">
+  <div class="topbar">
+    <div class="avatar"><svg><use href="#house"/></svg></div>
+    <div><b>{{ service_name }}</b><small>بوت</small></div>
+  </div>
+
+  <div class="chat" data-show="3,14.4">
+    <div class="msg out" data-t="3.3">🏠 بطاقة عقار</div>
+    <div class="msg in" data-t="3.8">العقار:<div class="btns c2"><span data-press="4.5">للإيجار</span><span>للبيع</span></div></div>
+    <div class="msg in" data-t="5.0">نوع العقار:<div class="btns c3"><span data-press="5.7">شقة</span><span>دور</span><span>فيلا</span></div></div>
+    <div class="msg in" data-t="6.1">📍 المنطقة؟</div>
+    <div class="msg out" data-t="6.6">السالمية - قطعة ١٢</div>
+    <div class="msg in" data-t="7.0">📐 المساحة؟</div>
+    <div class="msg out" data-t="7.4">120</div>
+    <div class="msg in" data-t="7.8">💰 السعر؟</div>
+    <div class="msg out" data-t="8.2">350</div>
+    <div class="msg in" data-t="8.6">📸 أرسل صور العقار</div>
+    <div class="msg out album" data-t="9.2">{% for p in photos %}<img src="{{ p }}">{% endfor %}</div>
+    <div class="msg in" data-t="9.9" data-hide="11.2">⏳ جاري تجهيز البطاقة...</div>
+    <div class="msg in media" data-t="11.2"><img src="{{ card }}"></div>
+  </div>
+
+  <div class="chat" data-show="14.4,20">
+    <div class="msg out" data-t="14.6">🧾 سند قبض</div>
+    <div class="msg in" data-t="15.0">استلمنا من (اسم الدافع):</div>
+    <div class="msg out" data-t="15.4">محمد عبدالله الكندري</div>
+    <div class="msg in" data-t="15.8">💵 المبلغ؟</div>
+    <div class="msg out" data-t="16.2">350.500</div>
+    <div class="msg in" data-t="16.6">طريقة الدفع:<div class="btns c3"><span>نقداً</span><span data-press="17.1">كي نت</span><span>تحويل</span></div></div>
+    <div class="msg in doc" data-t="17.5"><i><svg><use href="#pdf"/></svg></i><div><b>سند قبض رقم 0001</b><small>PDF · 350.500 د.ك</small></div></div>
+  </div>
+
+  <div class="chat" data-show="20,26">
+    <div class="msg in" data-t="20.3">⏰ إيجار يستحق بعد 3 أيام<br><br>👤 <b>أحمد السالم</b> — عمارة ١٢ - شقة ٥<br>💵 350 د.ك عن شهر نوفمبر
+      <div class="btns"><span data-press="21.6">📲 أرسل تذكير بالواتساب</span><span>✅ تم الدفع</span></div></div>
+  </div>
+
+  <div class="inputbar">
+    <span data-press="3.1,3.5">🏠 بطاقة عقار</span><span data-press="14.4,14.8">🧾 سند قبض</span>
+  </div>
+
+  <div class="overlay" data-show="12.3,14.4" data-zoom="12.3">
+    <div class="frame"><img src="{{ card }}"></div>
+  </div>
+  <div class="overlay" data-show="18.0,20" data-zoom="18.0">
+    <div class="frame"><img src="{{ receipt }}"></div>
+  </div>
+  <div class="overlay" data-show="22.1,26" data-zoom="22.1">
+    <div class="wa">
+      <div class="head"><i><svg><use href="#wa"/></svg></i>أحمد السالم</div>
+      <div class="bubble">السلام عليكم أحمد السالم،<br>نذكّركم بموعد سداد إيجار عمارة ١٢ - شقة ٥ لشهر نوفمبر 2026 بمبلغ 350 د.ك، المستحق بتاريخ 18/11/2026.<br>شاكرين تعاونكم 🌹<br>مكتب الديرة العقاري</div>
+    </div>
+  </div>
+</div>
+
+<div class="screen hook" data-show="0,3">
+  <h1>عندك مكتب عقار؟</h1>
+  <p>بطاقات العقار، سندات القبض،<br>وتذكير الإيجارات…<br>كلها من جوالك 📱</p>
+</div>
+
+<div class="screen cta" data-show="26,99">
+  <div class="logo"><svg><use href="#house"/></svg></div>
+  <h2>{{ service_name }}</h2>
+  <ul>
+    <li>🏠 بطاقات عقار بشعار مكتبك</li>
+    <li>🧾 سندات قبض PDF مرقّمة</li>
+    <li>⏰ تذكير تلقائي بالإيجارات</li>
+  </ul>
+  <div class="offer">🎁 جرّبه مجاناً {{ trial_days }} يوم</div>
+  <div class="price">بعدها {{ price }} د.ك شهرياً للمكتب كامل</div>
+  <div class="bio">{{ cta }}</div>
+</div>
+
+<script>
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const ease = (p) => 1 - Math.pow(1 - p, 3);
+function inRange(el, attr, t) {
+  const [a, b] = el.dataset[attr].split(",").map(Number);
+  return t >= a && t < b;
+}
+function render(t) {
+  document.querySelectorAll("[data-show]").forEach((el) => {
+    const on = inRange(el, "show", t);
+    el.classList.toggle("on", on);
+    if (el.parentElement.classList.contains("caption")) {
+      el.style.display = on ? "block" : "none";
+      const p = ease(clamp((t - Number(el.dataset.show.split(",")[0])) / 0.35, 0, 1));
+      el.style.opacity = p; el.style.transform = `translateY(${(1 - p) * 30}px)`;
+    }
+    if (el.classList.contains("screen") && on) {
+      const [a, b] = el.dataset.show.split(",").map(Number);
+      const fadeIn = a === 0 ? 1 : clamp((t - a) / 0.3, 0, 1);
+      el.style.opacity = Math.min(fadeIn, clamp((b - t) / 0.3, 0, 1));
+    }
+  });
+  document.querySelectorAll(".msg").forEach((el) => {
+    const start = Number(el.dataset.t);
+    const hide = el.dataset.hide ? Number(el.dataset.hide) : Infinity;
+    const on = t >= start && t < hide;
+    el.classList.toggle("on", on);
+    const p = ease(clamp((t - start) / 0.28, 0, 1));
+    el.style.opacity = p;
+    el.style.transform = `translateY(${(1 - p) * 40}px) scale(${0.92 + 0.08 * p})`;
+  });
+  document.querySelectorAll("[data-press]").forEach((el) => {
+    const [a, b] = el.dataset.press.split(",").map(Number);
+    el.classList.toggle("pressed", t >= a && t < (b || Infinity));
+  });
+  document.querySelectorAll("[data-zoom]").forEach((el) => {
+    const p = ease(clamp((t - Number(el.dataset.zoom)) / 0.45, 0, 1));
+    el.style.opacity = p;
+    el.firstElementChild.style.transform = `scale(${0.6 + 0.4 * p})`;
+  });
+}
+render(0);
+</script>
+</body>
+</html>

@@ -49,20 +49,18 @@ METHODS = {
 }
 
 KINDS = {
-    "rent": "إيجار",
     "deposit": "عربون",
-    "sale": "دفعة بيع",
-    "commission": "عمولة",
-    "insurance": "تأمين",
-    "other": "أخرى ✍️",
+    "advance": "مقدّم",
+    "sale": "بيع",
+    "rent": "إيجار",
+    "other": "رسوم أخرى ✍️",
 }
 
 PROPERTY_PROMPTS = {
-    "rent": "🏠 العقار أو الوحدة؟ (مثال: عمارة ١٢ - شقة ٥)",
     "deposit": "🏠 العربون عن أي عقار؟ (مثال: فيلا الجابرية ق٣)",
-    "sale": "🏠 الدفعة من ثمن أي عقار؟ (مثال: أرض صباح الأحمد)",
-    "commission": "🏠 العمولة عن أي عقار؟ (مثال: شقة السالمية ق١٢)",
-    "insurance": "🏠 التأمين عن أي عقار؟ (مثال: عمارة ١٢ - شقة ٥)",
+    "advance": "🏠 المقدّم عن أي عقار؟ (مثال: عمارة ١٢ - شقة ٥)",
+    "sale": "🏠 دفعة البيع عن أي عقار؟ (مثال: أرض صباح الأحمد)",
+    "rent": "🏠 العقار أو الوحدة؟ (مثال: عمارة ١٢ - شقة ٥)",
 }
 
 
@@ -71,11 +69,9 @@ def build_reason(kind: str, prop: str | None, month: str | None) -> str:
         return f"إيجار {prop} لشهر {month}" if prop else f"إيجار شهر {month}"
     if kind == "deposit":
         return f"عربون عن {prop}" if prop else "عربون"
-    if kind == "sale":
-        return f"دفعة من ثمن {prop}" if prop else "دفعة بيع"
-    if kind == "commission":
-        return f"عمولة {prop}" if prop else "عمولة"
-    return f"تأمين {prop}" if prop else "تأمين"
+    if kind == "advance":
+        return f"مقدّم عن {prop}" if prop else "دفعة مقدّمة"
+    return f"دفعة بيع عن {prop}" if prop else "دفعة بيع"
 
 
 def methods_kb(prefix: str, extra: list | None = None):
@@ -116,7 +112,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     context.user_data.clear()
     context.user_data["rc"] = {}
     buttons = [InlineKeyboardButton(label, callback_data=f"rc:kind:{key}") for key, label in KINDS.items()]
-    await update.message.reply_text("🧾 سند قبض جديد\n\nنوع السند:", reply_markup=grid(buttons, 3, [CANCEL_BTN]))
+    await update.message.reply_text("🧾 سند قبض جديد\n\nنوع الدفعة:", reply_markup=grid(buttons, 2, [CANCEL_BTN]))
     return KIND
 
 
@@ -140,7 +136,7 @@ async def kind(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     key = update.callback_query.data.split(":")[2]
     context.user_data["rc"]["kind"] = key
     if key == "other":
-        await update.effective_message.reply_text("✍️ اكتب سبب القبض (مثال: رسوم عقد):", reply_markup=CANCEL_KB)
+        await update.effective_message.reply_text("✍️ اكتب نوع الرسوم (مثال: رسوم عقد، عمولة، تأمين):", reply_markup=CANCEL_KB)
         return REASON_TEXT
     if key == "rent":
         today = today_kw()

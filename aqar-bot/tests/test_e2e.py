@@ -131,7 +131,7 @@ async def scenario(data_dir: Path) -> None:
 
         # ---------- سند قبض: عربون، النوع أول سؤال ----------
         out = await agent.send(BTN_RECEIPT)
-        assert {"rc:kind:rent", "rc:kind:deposit", "rc:kind:sale", "rc:kind:commission"} <= set(out[-1].callback_data())
+        assert set(out[-1].callback_data()) == {"rc:kind:deposit", "rc:kind:advance", "rc:kind:sale", "rc:kind:rent", "rc:kind:other", "cancel"}
         await agent.press("rc:kind:deposit")
         await agent.send("شقة ٥ - عمارة ١٢ السالمية")
         await agent.send("محمد عبدالله الكندري")
@@ -163,7 +163,15 @@ async def scenario(data_dir: Path) -> None:
         await owner.press("rc:method:cheque")
         await owner.press("rc:skip")
         await owner.send(BTN_RECEIPT)
-        await owner.press("rc:kind:other")
+        await owner.press("rc:kind:advance")
+        await owner.send("عمارة ١٢ - شقة ٨")
+        await owner.send("سارة الفهد")
+        await owner.send("840")
+        await owner.press("rc:method:knet")
+        await owner.press("rc:skip")
+        await owner.send(BTN_RECEIPT)
+        out = await owner.press("rc:kind:other")
+        assert "نوع الرسوم" in texts(out)
         await owner.send("رسوم عقد")
         await owner.send("خالد")
         await owner.send("25")
@@ -175,6 +183,7 @@ async def scenario(data_dir: Path) -> None:
             ("deposit", "عربون عن شقة ٥ - عمارة ١٢ السالمية"),
             ("rent", f"إيجار عمارة ١٢ - شقة ٨ لشهر {next_month}"),
             ("sale", "دفعة بيع"),
+            ("advance", "مقدّم عن عمارة ١٢ - شقة ٨"),
             ("other", "رسوم عقد"),
         ]
 
@@ -223,7 +232,7 @@ async def scenario(data_dir: Path) -> None:
         await owner.press(f"tn:pay:{ahmed.id}")
         out = await owner.press(f"tn:pm:{ahmed.id}:cash")
         docs = _files(out, "sendDocument")
-        assert len(docs) == 1 and "سند قبض رقم 0005" in docs[0].text
+        assert len(docs) == 1 and "سند قبض رقم 0006" in docs[0].text
         _save("receipt-rent.pdf", docs[0].files["document"][1])
         assert "wa.me/96555112233" in out[-1].urls()[0]
         ahmed = database.get_tenant(ahmed.id, office.id)
@@ -275,7 +284,7 @@ async def scenario(data_dir: Path) -> None:
 
         # ---------- تقرير الإدارة وتنبيهات الاشتراك ----------
         out = await admin.send("/admin")
-        assert "مكتب الديرة العقاري" in texts(out) and "بطاقات 2" in texts(out) and "سندات 5" in texts(out)
+        assert "مكتب الديرة العقاري" in texts(out) and "بطاقات 2" in texts(out) and "سندات 6" in texts(out)
         paid_until = database.get_office(office.id).paid_until
         assert await send_subscription_notices(app.bot, database, cfg, paid_until - timedelta(days=3)) == 1
         assert await send_subscription_notices(app.bot, database, cfg, paid_until - timedelta(days=5)) == 0

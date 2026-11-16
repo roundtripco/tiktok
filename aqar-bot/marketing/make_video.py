@@ -98,7 +98,7 @@ async def main() -> None:
         cta="👆 الرابط في البايو",
         photos=[data_uri(scenes[k]) for k in ("living", "kitchen", "bedroom", "building")],
         card=data_uri((ROOT / "samples" / "card-rent.jpg").read_bytes()),
-        receipt=data_uri(pdf_to_png(ROOT / "samples" / "receipt-rent.pdf"), "image/png"),
+        receipt=data_uri(pdf_to_png(ROOT / "samples" / "receipt.pdf"), "image/png"),
     )
 
     from playwright.async_api import async_playwright

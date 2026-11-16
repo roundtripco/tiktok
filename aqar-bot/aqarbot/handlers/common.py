@@ -60,23 +60,25 @@ def grid(buttons: list[InlineKeyboardButton], cols: int, extra: list[InlineKeybo
 
 def renew_text(context: ContextTypes.DEFAULT_TYPE, office: Office) -> str:
     cfg = config(context)
-    lines = [
-        f"💳 الاشتراك: {cfg.price_kwd} د.ك شهرياً للمكتب كامل (عدد الوسطاء مفتوح).",
-        "",
-    ]
+    lines = [f"💳 الاشتراك: {cfg.price_kwd} د.ك شهرياً للمكتب كامل (عدد الوسطاء مفتوح).", ""]
     if cfg.upay_link:
         lines.append(f"١. ادفع من هذا الرابط:\n{cfg.upay_link}")
+        lines.append(f"٢. اكتب كود مكتبك في الملاحظات: <code>{office.code}</code>")
+        lines.append("٣. اضغط «✅ دفعت» تحت، ونفعّل اشتراكك بأسرع وقت.")
     else:
-        lines.append("١. تواصل معنا لإرسال رابط الدفع.")
-    lines.append(f"٢. اكتب كود مكتبك في الملاحظات: <code>{office.code}</code>")
-    lines.append("٣. اضغط «✅ دفعت» تحت، ونفعّل اشتراكك بأسرع وقت.")
+        lines.append("١. اضغط «💳 اطلب رابط الدفع»، ويوصلك الرابط هنا في البوت.")
+        lines.append("٢. ادفع من الرابط (كي نت أو بطاقة).")
+        lines.append("٣. اضغط «✅ دفعت»، ونفعّل اشتراكك بأسرع وقت.")
     if cfg.support_contact:
         lines.append(f"\nللاستفسار: {cfg.support_contact}")
     return "\n".join(lines)
 
 
-def renew_kb() -> InlineKeyboardMarkup:
-    return InlineKeyboardMarkup([[InlineKeyboardButton("✅ دفعت", callback_data="os:paid")]])
+def renew_kb(context: ContextTypes.DEFAULT_TYPE) -> InlineKeyboardMarkup:
+    paid = InlineKeyboardButton("✅ دفعت", callback_data="os:paid")
+    if config(context).upay_link:
+        return InlineKeyboardMarkup([[paid]])
+    return InlineKeyboardMarkup([[InlineKeyboardButton("💳 اطلب رابط الدفع", callback_data="os:link")], [paid]])
 
 
 async def get_office_member(
@@ -93,7 +95,7 @@ async def get_office_member(
         if member.role == "owner":
             await reply(
                 "⛔️ انتهى اشتراك المكتب.\n\n" + renew_text(context, office),
-                reply_markup=renew_kb(),
+                reply_markup=renew_kb(context),
             )
         else:
             await reply("⛔️ انتهى اشتراك المكتب. تواصل مع صاحب المكتب لتجديده.")

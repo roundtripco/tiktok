@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+import time
 from datetime import timedelta
 from html import escape
 
@@ -34,6 +36,9 @@ from .common import (
 from .onboarding import IMAGE_INPUT, color_kb, invite_link, save_image
 
 EDIT_VALUE = 0
+LINK_VALUE = 0
+LINK_REQUEST_COOLDOWN = 10 * 60  # ثواني
+URL_RE = re.compile(r"^https?://\S+$")
 
 EDIT_PROMPTS = {
     "name": "اكتب اسم المكتب الجديد:",
@@ -172,7 +177,7 @@ async def renew(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     if not office:
         return
     await update.callback_query.answer()
-    await update.effective_message.reply_text(renew_text(context, office), reply_markup=renew_kb())
+    await update.effective_message.reply_text(renew_text(context, office), reply_markup=renew_kb(context))
 
 
 async def paid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -192,6 +197,81 @@ async def paid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             f"📞 {display_phone(office.phone)}\nالاشتراك الحالي لين: {format_date(office.paid_until)}",
             reply_markup=kb,
         )
+
+
+async def request_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """صاحب المكتب يطلب رابط دفع، والطلب يوصل للمدير."""
+    office = await _owner_office(update, context)
+    if not office:
+        return
+    requests = context.bot_data.setdefault("link_requests", {})
+    if time.monotonic() - requests.get(office.id, -LINK_REQUEST_COOLDOWN) < LINK_REQUEST_COOLDOWN:
+        await update.callback_query.answer("طلبك وصل، بيوصلك الرابط قريباً 🙏", show_alert=True)
+        return
+    requests[office.id] = time.monotonic()
+    await update.callback_query.answer()
+    await update.effective_message.reply_text("وصل طلبك ✅ بيوصلك رابط الدفع هنا في البوت قريباً.")
+    cfg = config(context)
+    kb = InlineKeyboardMarkup([[InlineKeyboardButton("📎 أرسل رابط الدفع", callback_data=f"adm:link:{office.id}")]])
+    for admin_id in cfg.admin_ids:
+        await context.bot.send_message(
+            admin_id,
+            f"💳 مكتب يطلب رابط دفع ({cfg.price_kwd} د.ك):\n<b>{escape(office.name)}</b>\n"
+            f"الكود: <code>{office.code}</code>\n📞 {display_phone(office.phone)}\n"
+            f"الاشتراك الحالي لين: {format_date(office.paid_until)}\n\n"
+            "سوِّ رابط من UPay واضغط الزر تحت والصقه.",
+            reply_markup=kb,
+        )
+
+
+async def send_link_to_office(context: ContextTypes.DEFAULT_TYPE, office, url: str) -> None:
+    cfg = config(context)
+    await context.bot.send_message(
+        office.owner_id,
+        f"💳 رابط دفع اشتراك <b>{escape(office.name)}</b> ({cfg.price_kwd} د.ك):\n{escape(url)}\n\n"
+        "⏳ الرابط صالح ٢٤ ساعة.\nبعد الدفع اضغط «✅ دفعت» تحت.",
+        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ دفعت", callback_data="os:paid")]]),
+    )
+    context.bot_data.setdefault("link_requests", {}).pop(office.id, None)
+
+
+async def admin_link_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    if not is_admin(update, context):
+        await update.callback_query.answer()
+        return ConversationHandler.END
+    office = db(context).get_office(int(update.callback_query.data.split(":")[2]))
+    await update.callback_query.answer()
+    context.user_data.clear()
+    context.user_data["link_office"] = office.id
+    await update.effective_message.reply_text(
+        f"الصق رابط الدفع لـ <b>{escape(office.name)}</b>:", reply_markup=CANCEL_KB
+    )
+    return LINK_VALUE
+
+
+async def admin_link_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    url = update.message.text.strip()
+    if not URL_RE.match(url):
+        await update.message.reply_text("هذا مو رابط. الصق الرابط كامل (يبدأ بـ https://):", reply_markup=CANCEL_KB)
+        return LINK_VALUE
+    office = db(context).get_office(context.user_data.pop("link_office"))
+    await send_link_to_office(context, office, url)
+    await update.message.reply_text(f"تم إرسال الرابط لـ {escape(office.name)} ✅", reply_markup=MAIN_MENU)
+    return ConversationHandler.END
+
+
+async def admin_sendlink_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not is_admin(update, context):
+        return
+    if len(context.args) != 2 or not URL_RE.match(context.args[1]):
+        await update.message.reply_text("الاستخدام: /sendlink كود_المكتب الرابط")
+        return
+    office = db(context).get_office_by_code(context.args[0])
+    if office is None:
+        await update.message.reply_text("ما لقيت مكتب بهذا الكود.")
+        return
+    await send_link_to_office(context, office, context.args[1])
+    await update.message.reply_text(f"تم إرسال الرابط لـ {escape(office.name)} ✅")
 
 
 # ---------- الإدارة ----------
@@ -273,6 +353,17 @@ def build_handlers():
         allow_reentry=True,
         name="office_edit",
     )
+    link_conv = ConversationHandler(
+        entry_points=[CallbackQueryHandler(admin_link_start, pattern=r"^adm:link:\d+$")],
+        states={LINK_VALUE: [MessageHandler(TEXT_INPUT, admin_link_value)]},
+        fallbacks=[
+            CallbackQueryHandler(cancel, pattern=r"^cancel$"),
+            CommandHandler("cancel", cancel),
+            MessageHandler(MENU_FILTER, end_silently),
+        ],
+        allow_reentry=True,
+        name="admin_link",
+    )
     simple = [
         CommandHandler("office", show_office),
         MessageHandler(filters.Text([BTN_OFFICE]), show_office),
@@ -282,8 +373,10 @@ def build_handlers():
         CallbackQueryHandler(member_remove, pattern=r"^om:rm:\d+$"),
         CallbackQueryHandler(renew, pattern=r"^os:renew$"),
         CallbackQueryHandler(paid, pattern=r"^os:paid$"),
+        CallbackQueryHandler(request_link, pattern=r"^os:link$"),
+        CommandHandler("sendlink", admin_sendlink_cmd),
         CommandHandler("admin", admin_cmd),
         CommandHandler("activate", admin_activate_cmd),
         CallbackQueryHandler(admin_activate_cb, pattern=r"^adm:act:\d+:\d+$"),
     ]
-    return edit_conv, simple
+    return [edit_conv, link_conv], simple

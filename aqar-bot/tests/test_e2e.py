@@ -42,7 +42,7 @@ def _save(name: str, content: bytes) -> None:
 async def scenario(data_dir: Path) -> None:
     cfg = Config(
         token="123:TEST", admin_ids=frozenset({ADMIN}), data_dir=data_dir, service_name="مساعد المكتب العقاري",
-        upay_link="https://upay.example/pay/aqar", price_kwd=12, trial_days=14, reminder_hour=9,
+        upay_link="", price_kwd=12, trial_days=14, reminder_hour=9,
         support_contact="",
     )
     database = Database(data_dir / "test.db")
@@ -198,10 +198,32 @@ async def scenario(data_dir: Path) -> None:
                               ((today - timedelta(days=1)).isoformat(), office.id))
         database.conn.commit()
         out = await owner.send(BTN_CARD)
-        assert "انتهى اشتراك" in texts(out) and "upay.example" in texts(out) and office.code in texts(out)
+        assert "انتهى اشتراك" in texts(out) and "os:link" in out[-1].callback_data()
         out = await agent.send(BTN_RECEIPT)
         assert "تواصل مع صاحب المكتب" in texts(out)
         assert await send_rent_reminders(app.bot, database, today) == 0  # المكتب المنتهي ما يوصله تذكير
+
+        # طلب رابط الدفع: يوصل للمدير، والمدير يلصق الرابط، ويوصل لصاحب المكتب
+        out = await owner.press("os:link")
+        to_admin = [c for c in out if str(c.params.get("chat_id")) == str(ADMIN)]
+        assert "وصل طلبك" in texts(out) and to_admin and office.code in to_admin[0].text
+        assert f"adm:link:{office.id}" in to_admin[0].callback_data()
+        out = await owner.press("os:link")  # طلب مكرر خلال ١٠ دقايق ما يوصل للمدير
+        assert not [c for c in out if str(c.params.get("chat_id")) == str(ADMIN)]
+        await admin.press(f"adm:link:{office.id}")
+        out = await admin.send("مو رابط")
+        assert "هذا مو رابط" in texts(out)
+        out = await admin.send("https://upay.example/link/abc123")
+        to_owner = [c for c in out if str(c.params.get("chat_id")) == str(OWNER)]
+        assert to_owner and "https://upay.example/link/abc123" in to_owner[0].text and "٢٤ ساعة" in to_owner[0].text
+        assert "os:paid" in to_owner[0].callback_data() and "تم إرسال الرابط" in texts(out)
+        out = await admin.send(f"/sendlink {office.code} https://upay.example/link/xyz")
+        assert any("link/xyz" in c.text for c in out if str(c.params.get("chat_id")) == str(OWNER))
+        out = await owner.press("os:link")  # بعد إرسال الرابط يقدر يطلب من جديد
+        assert [c for c in out if str(c.params.get("chat_id")) == str(ADMIN)]
+        out = await agent.send("/sendlink " + office.code + " https://evil.example")
+        assert not texts(out)
+
         out = await owner.press("os:paid")
         to_admin = [c for c in out if str(c.params.get("chat_id")) == str(ADMIN)]
         assert to_admin and f"adm:act:{office.id}:1" in to_admin[0].callback_data()

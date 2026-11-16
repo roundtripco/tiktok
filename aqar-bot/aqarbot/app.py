@@ -71,11 +71,12 @@ def build_application(
     app.add_handler(receipt.build_handler(), group=2)
     tenant_conv, tenant_simple = tenants.build_handlers()
     app.add_handler(tenant_conv, group=3)
-    office_conv, office_simple = office.build_handlers()
-    app.add_handler(office_conv, group=4)
+    office_convs, office_simple = office.build_handlers()
+    for offset, conv in enumerate(office_convs):
+        app.add_handler(conv, group=4 + offset)
     for handler in tenant_simple + office_simple:
-        app.add_handler(handler, group=5)
-    app.add_handler(CallbackQueryHandler(stale_cancel, pattern=r"^cancel$"), group=6)
+        app.add_handler(handler, group=8)
+    app.add_handler(CallbackQueryHandler(stale_cancel, pattern=r"^cancel$"), group=9)
     app.add_error_handler(on_error)
 
     if app.job_queue is not None:

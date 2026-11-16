@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+{% block body %}
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/"><i><svg><use href="#house"/></svg></i>{{ service_name }}</a>
+    <nav><a href="#offices">المكاتب</a><a href="#broadcast">رسالة جماعية</a><a href="/logout">خروج</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  {% if flash %}<div class="banner ok">{{ flash }}</div>{% endif %}
+  {% if error %}<div class="banner err">{{ error }}</div>{% endif %}
+
+  <style>
+    .kpis { grid-template-columns: repeat(4, 1fr); margin-bottom: 16px; }
+    .kpi b { display: block; font-size: 30px; font-weight: 800; line-height: 1.2; margin-top: 4px; }
+    .kpi small { color: var(--muted); font-size: 14px; }
+    .kpi .sub { font-size: 14px; color: var(--muted); margin-top: 2px; }
+    .two { grid-template-columns: 1.3fr 1fr; margin-bottom: 16px; align-items: start; }
+    .req { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+    .req:last-child { border-bottom: 0; }
+    .req .who { min-width: 0; }
+    .req .who b { display: block; }
+    .req .who span { font-size: 14px; color: var(--muted); }
+    .req form { display: flex; gap: 6px; flex-wrap: wrap; }
+    .tag-link { color: var(--warn); }
+    .tag-paid { color: var(--ok); }
+    .tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .tools input { max-width: 300px; }
+    .chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chips button { padding: 5px 14px 3px; font-size: 14px; }
+    .chips button[aria-pressed="false"] { background: transparent; color: var(--accent); }
+    .empty { color: var(--muted); padding: 8px 0; }
+    .bc { grid-template-columns: 1fr 220px; align-items: end; }
+    td a { font-weight: 800; text-decoration: none; }
+    @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, 1fr); } .two, .bc { grid-template-columns: 1fr; } }
+  </style>
+
+  <section class="grid kpis">
+    <div class="panel kpi"><small>المكاتب الفعالة</small><b class="num">{{ kpi.active }}</b><div class="sub">من {{ kpi.total }} مسجّل · {{ kpi.expired }} منتهي</div></div>
+    <div class="panel kpi"><small>مشتركين يدفعون</small><b class="num">{{ kpi.paying }}</b><div class="sub">في التجربة: {{ kpi.trial }}</div></div>
+    <div class="panel kpi"><small>دخل {{ month }}</small><b class="num">{{ kpi.month_revenue }}</b><div class="sub">من التفعيلات المسجّلة</div></div>
+    <div class="panel kpi"><small>الدخل الشهري المتوقع</small><b class="num">{{ kpi.mrr }}</b><div class="sub">{{ kpi.paying }} × {{ price }} د.ك</div></div>
+  </section>
+
+  <section class="grid two">
+    <div class="panel">
+      <h2>بانتظارك {% if requests %}({{ requests | length }}){% endif %}</h2>
+      {% for r in requests %}
+      <div class="req">
+        <div class="who">
+          <b><a href="/office/{{ r.office.id }}">{{ r.office.name }}</a></b>
+          <span class="{{ 'tag-link' if r.kind == 'link' else 'tag-paid' }}">{{ r.label }}</span>
+          <span>· {{ r.ago }} · <code>{{ r.office.code }}</code></span>
+        </div>
+        {% if r.kind == 'paid' %}
+        <form method="post" action="/office/{{ r.office.id }}/activate">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button name="months" value="1">تفعيل شهر</button>
+          <button name="months" value="3" class="ghost">٣ أشهر</button>
+        </form>
+        {% else %}
+        <a class="btn" href="/office/{{ r.office.id }}#link">أرسل رابط</a>
+        {% endif %}
+      </div>
+      {% else %}
+      <p class="empty">ما فيه طلبات معلّقة 👌</p>
+      {% endfor %}
+    </div>
+
+    <div class="panel">
+      <h2>ينتهي خلال ٧ أيام</h2>
+      {% for r in expiring %}
+      <div class="req">
+        <div class="who"><b><a href="/office/{{ r.id }}">{{ r.name }}</a></b><span>{{ r.status_label }} · لين {{ r.paid_until }}</span></div>
+        <span class="pill {{ 'expired' if r.days_left <= 2 else 'trial' }} num">{{ 'اليوم' if r.days_left == 0 else 'باقي ' ~ r.days_left ~ ' يوم' }}</span>
+      </div>
+      {% else %}
+      <p class="empty">ما فيه اشتراكات تنتهي قريب.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="panel" id="offices" style="margin-bottom: 16px;">
+    <div class="tools">
+      <h2 style="margin: 0;">المكاتب</h2>
+      <div class="chips" role="group" aria-label="فلترة حسب الحالة">
+        <button type="button" data-filter="all" aria-pressed="true">الكل</button>
+        <button type="button" data-filter="paid" aria-pressed="false">مشترك</button>
+        <button type="button" data-filter="trial" aria-pressed="false">تجربة</button>
+        <button type="button" data-filter="expired" aria-pressed="false">منتهي</button>
+      </div>
+      <input id="search" type="search" placeholder="ابحث بالاسم أو الكود أو الرقم" aria-label="بحث">
+    </div>
+    {% if rows %}
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>المكتب</th><th>الحالة</th><th>لين</th><th>الأعضاء</th><th>المستأجرين</th>
+          <th>بطاقات (٣٠ يوم)</th><th>سندات (٣٠ يوم)</th><th>آخر نشاط</th><th>دفع إجمالي</th><th>التسجيل</th>
+        </tr></thead>
+        <tbody>
+          {% for r in rows %}
+          <tr data-status="{{ r.status }}" data-search="{{ r.name }} {{ r.code }} {{ r.phone }}">
+            <td><a href="/office/{{ r.id }}">{{ r.name }}</a><br><span class="muted num" style="font-size: 13px;"><code>{{ r.code }}</code> · {{ r.phone }}</span></td>
+            <td><span class="pill {{ r.status }}">{{ r.status_label }}</span></td>
+            <td class="num">{{ r.paid_until }}<br><span class="muted" style="font-size: 13px;">{{ 'منتهي' if r.days_left < 0 else 'باقي ' ~ r.days_left ~ ' يوم' }}</span></td>
+            <td class="num">{{ r.members }}</td>
+            <td class="num">{{ r.tenants }}</td>
+            <td class="num">{{ r.cards }}</td>
+            <td class="num">{{ r.receipts }}</td>
+            <td class="num">{{ r.last_active }}</td>
+            <td class="num">{{ r.revenue }}</td>
+            <td class="num">{{ r.created }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <p class="empty" id="no-match" hidden>ما فيه مكاتب تطابق البحث.</p>
+    {% else %}
+    <p class="empty">ما سجّل أي مكتب للحين. أول ما يسجّل مكتب يطلع هنا ويوصلك تنبيه في البوت.</p>
+    {% endif %}
+  </section>
+
+  <section class="panel" id="broadcast">
+    <h2>رسالة جماعية</h2>
+    <p class="muted" style="margin: -6px 0 14px;">توصل لأصحاب المكاتب داخل البوت.</p>
+    <form method="post" action="/broadcast" class="grid bc">
+      <input type="hidden" name="csrf" value="{{ csrf }}">
+      <div><label for="bc-text">الرسالة</label><textarea id="bc-text" name="text" required placeholder="مثال: أضفنا ميزة جديدة في البطاقات…"></textarea></div>
+      <div class="grid" style="gap: 10px;">
+        <div><label for="bc-aud">لمن؟</label>
+          <select id="bc-aud" name="audience">
+            <option value="active">المكاتب الفعالة</option>
+            <option value="paid">المشتركين فقط</option>
+            <option value="trial">اللي في التجربة</option>
+            <option value="expired">المنتهين</option>
+            <option value="all">الكل</option>
+          </select>
+        </div>
+        <button type="submit">أرسل الرسالة</button>
+      </div>
+    </form>
+  </section>
+</main>
+
+<script>
+  const rows = [...document.querySelectorAll("tbody tr")];
+  const search = document.getElementById("search");
+  const chips = [...document.querySelectorAll("[data-filter]")];
+  let status = "all";
+  function apply() {
+    const q = search.value.trim();
+    let shown = 0;
+    rows.forEach((tr) => {
+      const ok = (status === "all" || tr.dataset.status === status) && (!q || tr.dataset.search.includes(q));
+      tr.hidden = !ok;
+      shown += ok;
+    });
+    const none = document.getElementById("no-match");
+    if (none) none.hidden = shown > 0;
+  }
+  search.addEventListener("input", apply);
+  chips.forEach((c) => c.addEventListener("click", () => {
+    status = c.dataset.filter;
+    chips.forEach((x) => x.setAttribute("aria-pressed", String(x === c)));
+    apply();
+  }));
+</script>
+{% endblock %}

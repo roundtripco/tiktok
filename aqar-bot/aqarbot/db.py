@@ -72,6 +72,13 @@ CREATE TABLE IF NOT EXISTS activations (
     admin_id INTEGER NOT NULL,
     created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS requests (
+    id INTEGER PRIMARY KEY,
+    office_id INTEGER NOT NULL REFERENCES offices(id),
+    kind TEXT NOT NULL CHECK (kind IN ('link', 'paid')),
+    created_at TEXT NOT NULL,
+    resolved_at TEXT
+);
 CREATE TABLE IF NOT EXISTS usage (
     office_id INTEGER NOT NULL,
     day TEXT NOT NULL,
@@ -151,6 +158,18 @@ class Database:
         self.conn.row_factory = sqlite3.Row
         self.conn.execute("PRAGMA foreign_keys = ON")
         self.conn.executescript(SCHEMA)
+        self._migrate()
+
+    def _migrate(self) -> None:
+        """إضافة الأعمدة الجديدة لقواعد بيانات قديمة."""
+        cols = {r["name"] for r in self.conn.execute("PRAGMA table_info(activations)")}
+        with self.conn:
+            if "amount_fils" not in cols:
+                self.conn.execute("ALTER TABLE activations ADD COLUMN amount_fils INTEGER NOT NULL DEFAULT 0")
+            if "kind" not in cols:
+                self.conn.execute("ALTER TABLE activations ADD COLUMN kind TEXT NOT NULL DEFAULT 'paid'")
+            if "days" not in cols:
+                self.conn.execute("ALTER TABLE activations ADD COLUMN days INTEGER NOT NULL DEFAULT 0")
 
     def close(self) -> None:
         self.conn.close()
@@ -212,18 +231,100 @@ class Database:
         with self.conn:
             self.conn.execute(f"UPDATE offices SET {cols} WHERE id=?", (*fields.values(), office_id))
 
-    def extend_subscription(self, office_id: int, months: int, admin_id: int) -> Office:
+    def extend_subscription(self, office_id: int, months: int, admin_id: int, amount_fils: int = 0) -> Office:
+        """تفعيل اشتراك مدفوع. المدة تنحسب من نهاية الاشتراك الحالي أو من اليوم إذا منتهي."""
         office = self.get_office(office_id)
-        start = max(office.paid_until, today_kw())
-        new_until = add_months(start, months)
+        new_until = add_months(max(office.paid_until, today_kw()), months)
         with self.conn:
             self.conn.execute("UPDATE offices SET paid_until=? WHERE id=?", (new_until.isoformat(), office_id))
             self.conn.execute(
-                "INSERT INTO activations (office_id, months, new_paid_until, admin_id, created_at)"
-                " VALUES (?, ?, ?, ?, ?)",
-                (office_id, months, new_until.isoformat(), admin_id, _now()),
+                "INSERT INTO activations (office_id, months, new_paid_until, admin_id, created_at, amount_fils, kind)"
+                " VALUES (?, ?, ?, ?, ?, ?, 'paid')",
+                (office_id, months, new_until.isoformat(), admin_id, _now(), amount_fils),
+            )
+            self.conn.execute(
+                "UPDATE requests SET resolved_at=? WHERE office_id=? AND resolved_at IS NULL", (_now(), office_id)
             )
         return self.get_office(office_id)
+
+    def extend_trial(self, office_id: int, days: int, admin_id: int) -> Office:
+        office = self.get_office(office_id)
+        new_until = date.fromordinal(max(office.paid_until, today_kw()).toordinal() + days)
+        with self.conn:
+            self.conn.execute("UPDATE offices SET paid_until=? WHERE id=?", (new_until.isoformat(), office_id))
+            self.conn.execute(
+                "INSERT INTO activations (office_id, months, new_paid_until, admin_id, created_at, kind, days)"
+                " VALUES (?, 0, ?, ?, ?, 'trial', ?)",
+                (office_id, new_until.isoformat(), admin_id, _now(), days),
+            )
+        return self.get_office(office_id)
+
+    def activations(self, office_id: int | None = None) -> list[dict]:
+        sql = "SELECT * FROM activations"
+        args: tuple = ()
+        if office_id is not None:
+            sql += " WHERE office_id=?"
+            args = (office_id,)
+        return [dict(r) for r in self.conn.execute(sql + " ORDER BY id DESC", args)]
+
+    # ---------- الطلبات المعلّقة ----------
+
+    def add_request(self, office_id: int, kind: str) -> None:
+        with self.conn:
+            self.conn.execute(
+                "INSERT INTO requests (office_id, kind, created_at) VALUES (?, ?, ?)", (office_id, kind, _now())
+            )
+
+    def last_open_request(self, office_id: int, kind: str) -> datetime | None:
+        row = self.conn.execute(
+            "SELECT created_at FROM requests WHERE office_id=? AND kind=? AND resolved_at IS NULL"
+            " ORDER BY id DESC LIMIT 1", (office_id, kind),
+        ).fetchone()
+        return datetime.fromisoformat(row[0]) if row else None
+
+    def resolve_requests(self, office_id: int, kind: str) -> None:
+        with self.conn:
+            self.conn.execute(
+                "UPDATE requests SET resolved_at=? WHERE office_id=? AND kind=? AND resolved_at IS NULL",
+                (_now(), office_id, kind),
+            )
+
+    def open_requests(self) -> list[dict]:
+        rows = self.conn.execute(
+            "SELECT office_id, kind, MAX(created_at) AS created_at FROM requests WHERE resolved_at IS NULL"
+            " GROUP BY office_id, kind ORDER BY created_at DESC"
+        ).fetchall()
+        return [dict(r) for r in rows]
+
+    # ---------- إحصائيات اللوحة ----------
+
+    def office_stats(self, since: date) -> dict[int, dict]:
+        """لكل مكتب: عدد الأعضاء والمستأجرين والاستخدام وآخر نشاط وهل دفع قبل."""
+        stats: dict[int, dict] = {}
+
+        def put(sql: str, key: str, args: tuple = ()) -> None:
+            for row in self.conn.execute(sql, args):
+                stats.setdefault(row[0], {})[key] = row[1]
+
+        put("SELECT office_id, COUNT(*) FROM members GROUP BY office_id", "members")
+        put("SELECT office_id, COUNT(*) FROM tenants WHERE active=1 GROUP BY office_id", "tenants")
+        put("SELECT office_id, SUM(count) FROM usage WHERE action='card' AND day>=? GROUP BY office_id",
+            "cards", (since.isoformat(),))
+        put("SELECT office_id, SUM(count) FROM usage WHERE action='receipt' AND day>=? GROUP BY office_id",
+            "receipts", (since.isoformat(),))
+        put("SELECT office_id, MAX(day) FROM usage GROUP BY office_id", "last_active")
+        put("SELECT office_id, SUM(amount_fils) FROM activations WHERE kind='paid' GROUP BY office_id", "revenue")
+        put("SELECT office_id, COUNT(*) FROM activations WHERE kind='paid' GROUP BY office_id", "payments")
+        put("SELECT id, created_at FROM offices", "created_at")
+        return stats
+
+    def revenue_between(self, start: date, end: date) -> int:
+        row = self.conn.execute(
+            "SELECT COALESCE(SUM(amount_fils), 0) FROM activations WHERE kind='paid'"
+            " AND substr(created_at, 1, 10) >= ? AND substr(created_at, 1, 10) < ?",
+            (start.isoformat(), end.isoformat()),
+        ).fetchone()
+        return row[0]
 
     def next_card_number(self, office_id: int) -> int:
         with self.conn:

@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import re
-import time
-from datetime import timedelta
+from datetime import datetime, timedelta
 from html import escape
 
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup, Update
 from telegram.ext import (
     CallbackQueryHandler,
     CommandHandler,
@@ -17,6 +16,8 @@ from telegram.ext import (
     filters,
 )
 
+from ..config import Config
+from ..db import Database, Office
 from ..documents import COLORS
 from ..utils import display_phone, format_date, normalize_phone, today_kw
 from .common import (
@@ -187,6 +188,7 @@ async def paid(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.callback_query.answer()
     await update.callback_query.edit_message_reply_markup(None)
     await update.effective_message.reply_text("شكراً 🙏 وصلنا تنبيهك، وبنفعّل الاشتراك بعد التأكد من الدفع.")
+    db(context).add_request(office.id, "paid")
     kb = InlineKeyboardMarkup([[
         InlineKeyboardButton(f"تفعيل {m} شهر", callback_data=f"adm:act:{office.id}:{m}") for m in (1, 3, 12)
     ]])
@@ -204,11 +206,11 @@ async def request_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
     office = await _owner_office(update, context)
     if not office:
         return
-    requests = context.bot_data.setdefault("link_requests", {})
-    if time.monotonic() - requests.get(office.id, -LINK_REQUEST_COOLDOWN) < LINK_REQUEST_COOLDOWN:
+    last = db(context).last_open_request(office.id, "link")
+    if last and (datetime.now() - last).total_seconds() < LINK_REQUEST_COOLDOWN:
         await update.callback_query.answer("طلبك وصل، بيوصلك الرابط قريباً 🙏", show_alert=True)
         return
-    requests[office.id] = time.monotonic()
+    db(context).add_request(office.id, "link")
     await update.callback_query.answer()
     await update.effective_message.reply_text("وصل طلبك ✅ بيوصلك رابط الدفع هنا في البوت قريباً.")
     cfg = config(context)
@@ -224,15 +226,14 @@ async def request_link(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
         )
 
 
-async def send_link_to_office(context: ContextTypes.DEFAULT_TYPE, office, url: str) -> None:
-    cfg = config(context)
-    await context.bot.send_message(
+async def send_link_to_office(bot: Bot, cfg: Config, database: Database, office: Office, url: str) -> None:
+    await bot.send_message(
         office.owner_id,
         f"💳 رابط دفع اشتراك <b>{escape(office.name)}</b> ({cfg.price_kwd} د.ك):\n{escape(url)}\n\n"
         "⏳ الرابط صالح ٢٤ ساعة.\nبعد الدفع اضغط «✅ دفعت» تحت.",
         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ دفعت", callback_data="os:paid")]]),
     )
-    context.bot_data.setdefault("link_requests", {}).pop(office.id, None)
+    database.resolve_requests(office.id, "link")
 
 
 async def admin_link_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -255,7 +256,7 @@ async def admin_link_value(update: Update, context: ContextTypes.DEFAULT_TYPE) -
         await update.message.reply_text("هذا مو رابط. الصق الرابط كامل (يبدأ بـ https://):", reply_markup=CANCEL_KB)
         return LINK_VALUE
     office = db(context).get_office(context.user_data.pop("link_office"))
-    await send_link_to_office(context, office, url)
+    await send_link_to_office(context.bot, config(context), db(context), office, url)
     await update.message.reply_text(f"تم إرسال الرابط لـ {escape(office.name)} ✅", reply_markup=MAIN_MENU)
     return ConversationHandler.END
 
@@ -270,7 +271,7 @@ async def admin_sendlink_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if office is None:
         await update.message.reply_text("ما لقيت مكتب بهذا الكود.")
         return
-    await send_link_to_office(context, office, context.args[1])
+    await send_link_to_office(context.bot, config(context), db(context), office, context.args[1])
     await update.message.reply_text(f"تم إرسال الرابط لـ {escape(office.name)} ✅")
 
 
@@ -280,8 +281,8 @@ def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     return update.effective_user.id in config(context).admin_ids
 
 
-async def notify_activation(context: ContextTypes.DEFAULT_TYPE, office) -> None:
-    await context.bot.send_message(
+async def notify_activation(bot: Bot, office: Office) -> None:
+    await bot.send_message(
         office.owner_id,
         f"✅ تم تفعيل اشتراك <b>{escape(office.name)}</b> لين {format_date(office.paid_until)}. شكراً لك!",
     )
@@ -292,12 +293,14 @@ async def admin_activate_cb(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         await update.callback_query.answer()
         return
     _, _, office_id, months = update.callback_query.data.split(":")
-    office = db(context).extend_subscription(int(office_id), int(months), update.effective_user.id)
+    office = db(context).extend_subscription(
+        int(office_id), int(months), update.effective_user.id, int(months) * config(context).price_kwd * 1000
+    )
     await update.callback_query.answer("تم التفعيل ✅")
     await update.callback_query.edit_message_text(
         f"✅ تم تفعيل {escape(office.name)} لين {format_date(office.paid_until)}"
     )
-    await notify_activation(context, office)
+    await notify_activation(context.bot, office)
 
 
 async def admin_activate_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -310,9 +313,12 @@ async def admin_activate_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if office is None:
         await update.message.reply_text("ما لقيت مكتب بهذا الكود.")
         return
-    office = db(context).extend_subscription(office.id, int(context.args[1]), update.effective_user.id)
+    months = int(context.args[1])
+    office = db(context).extend_subscription(
+        office.id, months, update.effective_user.id, months * config(context).price_kwd * 1000
+    )
     await update.message.reply_text(f"✅ {escape(office.name)} فعال لين {format_date(office.paid_until)}")
-    await notify_activation(context, office)
+    await notify_activation(context.bot, office)
 
 
 def admin_report(context: ContextTypes.DEFAULT_TYPE, days: int = 7) -> str:
@@ -334,6 +340,18 @@ def admin_report(context: ContextTypes.DEFAULT_TYPE, days: int = 7) -> str:
             f" | بطاقات {u.get('card', 0)} · سندات {u.get('receipt', 0)}"
         )
     return "\n".join(lines)
+
+
+async def dashboard_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    if not is_admin(update, context):
+        return
+    dashboard = context.bot_data.get("dashboard")
+    if dashboard is None:
+        await update.message.reply_text("لوحة التحكم مو مفعّلة. أضف DASHBOARD_URL في ملف .env وأعد تشغيل البوت.")
+        return
+    await update.message.reply_text(
+        f"🔐 رابط دخول لوحة التحكم (صالح ١٥ دقيقة ولمرة وحدة):\n{dashboard.login_link()}",
+    )
 
 
 async def admin_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -376,6 +394,7 @@ def build_handlers():
         CallbackQueryHandler(request_link, pattern=r"^os:link$"),
         CommandHandler("sendlink", admin_sendlink_cmd),
         CommandHandler("admin", admin_cmd),
+        CommandHandler("dashboard", dashboard_cmd),
         CommandHandler("activate", admin_activate_cmd),
         CallbackQueryHandler(admin_activate_cb, pattern=r"^adm:act:\d+:\d+$"),
     ]

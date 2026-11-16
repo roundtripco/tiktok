@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}{{ office.name }}{% endblock %}
+{% block body %}
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/"><i><svg><use href="#house"/></svg></i>{{ service_name }}</a>
+    <nav><a href="/">← كل المكاتب</a><a href="/logout">خروج</a></nav>
+  </div>
+</header>
+
+<main class="wrap">
+  {% if flash %}<div class="banner ok">{{ flash }}</div>{% endif %}
+  {% if error %}<div class="banner err">{{ error }}</div>{% endif %}
+
+  <style>
+    .head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .logo { width: 64px; height: 64px; border-radius: 50%; background: var(--surface) center / contain no-repeat; border: 1px solid var(--line); flex-shrink: 0; }
+    .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -1px; }
+    .layout { grid-template-columns: 1fr 1.2fr; align-items: start; }
+    dl { margin: 0; display: grid; grid-template-columns: 9em 1fr; gap: 10px 14px; }
+    dt { color: var(--muted); font-size: 14px; }
+    dd { margin: 0; font-weight: 700; min-width: 0; }
+    .stats { grid-template-columns: repeat(2, 1fr); margin-top: 16px; }
+    .stat b { display: block; font-size: 24px; font-weight: 800; }
+    .stat small { color: var(--muted); font-size: 13px; }
+    .actions form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .actions section + section { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 16px; }
+    .actions h3 { font-size: 16px; margin: 0 0 10px; }
+    .actions form.row-input { display: grid; grid-template-columns: 1fr auto; gap: 8px; }
+    .notice { background: var(--warn-soft); color: var(--warn); border-radius: 12px; padding: 10px 14px; font-weight: 700; margin-bottom: 16px; }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  </style>
+
+  <div class="head">
+    {% if logo %}<div class="logo" style="background-image: url('{{ logo }}')"></div>{% endif %}
+    <div>
+      <h1>{{ office.name }}</h1>
+      <span class="pill {{ row.status }}">{{ row.status_label }}</span>
+      <span class="muted num">· لين {{ row.paid_until }} ({{ 'منتهي' if row.days_left < 0 else 'باقي ' ~ row.days_left ~ ' يوم' }})</span>
+    </div>
+  </div>
+
+  {% for r in open_reqs %}<div class="notice">⏳ المكتب {{ r.label }} · {{ r.ago }}</div>{% endfor %}
+
+  <div class="grid layout">
+    <div>
+      <section class="panel">
+        <h2>بيانات المكتب</h2>
+        <dl>
+          <dt>الكود</dt><dd><code>{{ office.code }}</code></dd>
+          <dt>رقم التواصل</dt><dd class="num" dir="ltr" style="text-align: right;">{{ row.phone }}</dd>
+          <dt>اللون</dt><dd><span class="swatch" style="background: {{ color[1] }}"></span> {{ color[0] }}</dd>
+          <dt>تاريخ التسجيل</dt><dd class="num">{{ row.created }}</dd>
+          <dt>آخر نشاط</dt><dd class="num">{{ row.last_active }}</dd>
+          <dt>دفع إجمالي</dt><dd class="num">{{ row.revenue }}</dd>
+          <dt>الأعضاء</dt><dd>{% for m in members %}{{ '👑' if m.role == 'owner' else '👤' }} {{ m.name }}{% if not loop.last %}<br>{% endif %}{% endfor %}</dd>
+        </dl>
+      </section>
+
+      <section class="grid stats">
+        <div class="panel stat"><small>بطاقات (٣٠ يوم)</small><b class="num">{{ row.cards }}</b></div>
+        <div class="panel stat"><small>سندات (٣٠ يوم)</small><b class="num">{{ row.receipts }}</b></div>
+        <div class="panel stat"><small>المستأجرين</small><b class="num">{{ tenants_count }}</b></div>
+        <div class="panel stat"><small>باقي تحصيله هالشهر</small><b class="num" style="font-size: 18px;">{{ unpaid_total }}</b><small>{{ unpaid_count }} مستأجر</small></div>
+      </section>
+
+      <section class="panel" style="margin-top: 16px;">
+        <h2>سجل الاشتراك</h2>
+        {% if history %}
+        <div class="table-wrap"><table>
+          <thead><tr><th>التاريخ</th><th>العملية</th><th>المبلغ</th><th>صار لين</th></tr></thead>
+          <tbody>{% for h in history %}<tr><td class="num">{{ h.date }}</td><td>{{ h.what }}</td><td class="num">{{ h.amount }}</td><td class="num">{{ h.until }}</td></tr>{% endfor %}</tbody>
+        </table></div>
+        {% else %}<p class="muted" style="margin: 0;">ما فيه تفعيلات للحين، المكتب على التجربة المجانية.</p>{% endif %}
+      </section>
+    </div>
+
+    <div class="panel actions">
+      <h2>الإجراءات</h2>
+
+      <section>
+        <h3>تفعيل اشتراك مدفوع</h3>
+        <p class="muted" style="margin: -4px 0 10px; font-size: 14px;">يتسجّل المبلغ ({{ price }} د.ك للشهر) ويوصل للمكتب تنبيه.</p>
+        <form method="post" action="/office/{{ office.id }}/activate">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button name="months" value="1">شهر</button>
+          <button name="months" value="3" class="ghost">٣ أشهر</button>
+          <button name="months" value="6" class="ghost">٦ أشهر</button>
+          <button name="months" value="12" class="ghost">سنة</button>
+        </form>
+      </section>
+
+      <section id="link">
+        <h3>إرسال رابط دفع</h3>
+        <form method="post" action="/office/{{ office.id }}/link" class="row-input">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <input type="url" name="url" required placeholder="https://…" aria-label="رابط الدفع" dir="ltr">
+          <button type="submit">أرسل</button>
+        </form>
+      </section>
+
+      <section>
+        <h3>تمديد التجربة المجانية</h3>
+        <form method="post" action="/office/{{ office.id }}/trial">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <button name="days" value="3" class="ghost">٣ أيام</button>
+          <button name="days" value="7" class="ghost">٧ أيام</button>
+          <button name="days" value="14" class="ghost">١٤ يوم</button>
+        </form>
+      </section>
+
+      <section>
+        <h3>رسالة لصاحب المكتب</h3>
+        <form method="post" action="/office/{{ office.id }}/message" class="grid" style="gap: 8px;">
+          <input type="hidden" name="csrf" value="{{ csrf }}">
+          <textarea name="text" required aria-label="نص الرسالة" placeholder="توصله داخل البوت"></textarea>
+          <div><button type="submit">أرسل الرسالة</button></div>
+        </form>
+      </section>
+    </div>
+  </div>
+</main>
+{% endblock %}

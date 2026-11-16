@@ -12,6 +12,7 @@ from telegram.ext import Application, CallbackQueryHandler, ContextTypes, Defaul
 from telegram.request import BaseRequest
 
 from .config import Config
+from .dashboard import Dashboard
 from .db import Database
 from .handlers import card, office, onboarding, receipt, tenants
 from .handlers.common import stale_cancel
@@ -56,13 +57,20 @@ def build_application(
 
     async def post_init(app: Application) -> None:
         await app.bot.set_my_commands(COMMANDS)
+        if dashboard is not None:
+            await dashboard.start()
 
     async def post_shutdown(app: Application) -> None:
+        if dashboard is not None:
+            await dashboard.stop()
         await renderer.stop()
         database.close()
 
+    dashboard: Dashboard | None = None
     app = builder.post_init(post_init).post_shutdown(post_shutdown).build()
     app.bot_data.update(db=database, config=cfg, renderer=renderer)
+    dashboard = Dashboard(app) if cfg.dashboard_url else None
+    app.bot_data["dashboard"] = dashboard
 
     # كل محادثة في مجموعة مستقلة: لو المستخدم ضغط زر من القائمة وسط محادثة،
     # المحادثة الحالية تنتهي بهدوء والمحادثة الجديدة تبدأ.

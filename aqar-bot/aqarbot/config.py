@@ -31,6 +31,8 @@ class Config:
     trial_days: int
     reminder_hour: int
     support_contact: str
+    dashboard_url: str = ""
+    dashboard_port: int = 8081
 
 
 def load_config() -> Config:
@@ -53,4 +55,6 @@ def load_config() -> Config:
         trial_days=int(os.environ.get("TRIAL_DAYS", "14")),
         reminder_hour=int(os.environ.get("REMINDER_HOUR", "9")),
         support_contact=os.environ.get("SUPPORT_CONTACT", ""),
+        dashboard_url=os.environ.get("DASHBOARD_URL", "").rstrip("/"),
+        dashboard_port=int(os.environ.get("DASHBOARD_PORT", "8081")),
     )

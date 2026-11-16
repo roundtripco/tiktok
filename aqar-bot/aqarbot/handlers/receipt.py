@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import date
 
 from telegram import InlineKeyboardButton, InputFile, Update
 from telegram.constants import ChatAction
@@ -17,7 +18,7 @@ from telegram.ext import (
 
 from ..db import Member, Office, Receipt
 from ..documents import render_receipt
-from ..utils import format_kwd, month_label, parse_amount, today_kw
+from ..utils import add_months, format_kwd, month_key, month_label, parse_amount, today_kw
 from .common import (
     BTN_RECEIPT,
     CANCEL_BTN,
@@ -37,7 +38,7 @@ from .common import (
 
 log = logging.getLogger(__name__)
 
-PAYER, AMOUNT, REASON, REASON_TEXT, METHOD, NOTES = range(6)
+KIND, MONTH, PROPERTY, REASON_TEXT, PAYER, AMOUNT, METHOD, NOTES = range(8)
 
 METHODS = {
     "cash": "نقداً",
@@ -47,15 +48,34 @@ METHODS = {
     "link": "رابط دفع",
 }
 
+KINDS = {
+    "rent": "إيجار",
+    "deposit": "عربون",
+    "sale": "دفعة بيع",
+    "commission": "عمولة",
+    "insurance": "تأمين",
+    "other": "أخرى ✍️",
+}
 
-def reasons() -> dict[str, str]:
-    return {
-        "rent": f"إيجار شهر {month_label(today_kw())}",
-        "deposit": "عربون",
-        "commission": "عمولة",
-        "insurance": "تأمين",
-        "other": "سبب آخر ✍️",
-    }
+PROPERTY_PROMPTS = {
+    "rent": "🏠 العقار أو الوحدة؟ (مثال: عمارة ١٢ - شقة ٥)",
+    "deposit": "🏠 العربون عن أي عقار؟ (مثال: فيلا الجابرية ق٣)",
+    "sale": "🏠 الدفعة من ثمن أي عقار؟ (مثال: أرض صباح الأحمد)",
+    "commission": "🏠 العمولة عن أي عقار؟ (مثال: شقة السالمية ق١٢)",
+    "insurance": "🏠 التأمين عن أي عقار؟ (مثال: عمارة ١٢ - شقة ٥)",
+}
+
+
+def build_reason(kind: str, prop: str | None, month: str | None) -> str:
+    if kind == "rent":
+        return f"إيجار {prop} لشهر {month}" if prop else f"إيجار شهر {month}"
+    if kind == "deposit":
+        return f"عربون عن {prop}" if prop else "عربون"
+    if kind == "sale":
+        return f"دفعة من ثمن {prop}" if prop else "دفعة بيع"
+    if kind == "commission":
+        return f"عمولة {prop}" if prop else "عمولة"
+    return f"تأمين {prop}" if prop else "تأمين"
 
 
 def methods_kb(prefix: str, extra: list | None = None):
@@ -66,12 +86,12 @@ def methods_kb(prefix: str, extra: list | None = None):
 async def issue_receipt(
     update: Update, context: ContextTypes.DEFAULT_TYPE, office: Office, member: Member, *,
     payer: str, amount_fils: int, reason: str, method: str, notes: str | None = None,
-    tenant_id: int | None = None,
+    tenant_id: int | None = None, kind: str = "other",
 ) -> Receipt | None:
     """يسجّل السند ويرسله PDF. يرجع السند أو None إذا صار خطأ في الملف."""
     receipt = db(context).create_receipt(
         office_id=office.id, payer=payer, amount_fils=amount_fils, reason=reason, method=method,
-        notes=notes, created_by=member.user_id, tenant_id=tenant_id,
+        notes=notes, created_by=member.user_id, tenant_id=tenant_id, kind=kind,
     )
     chat = update.effective_chat
     await chat.send_action(ChatAction.UPLOAD_DOCUMENT)
@@ -95,8 +115,70 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         return ConversationHandler.END
     context.user_data.clear()
     context.user_data["rc"] = {}
-    await update.message.reply_text("🧾 سند قبض جديد\n\nاستلمنا من (اسم الدافع):", reply_markup=CANCEL_KB)
+    buttons = [InlineKeyboardButton(label, callback_data=f"rc:kind:{key}") for key, label in KINDS.items()]
+    await update.message.reply_text("🧾 سند قبض جديد\n\nنوع السند:", reply_markup=grid(buttons, 3, [CANCEL_BTN]))
+    return KIND
+
+
+async def _clear(update: Update) -> None:
+    await update.callback_query.answer()
+    await update.callback_query.edit_message_reply_markup(None)
+
+
+async def _ask_payer(update: Update) -> int:
+    await update.effective_message.reply_text("👤 استلمنا من (اسم الدافع):", reply_markup=CANCEL_KB)
     return PAYER
+
+
+async def _ask_property(update: Update, kind: str) -> int:
+    await update.effective_message.reply_text(PROPERTY_PROMPTS[kind], reply_markup=skip_kb("rc:skip"))
+    return PROPERTY
+
+
+async def kind(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await _clear(update)
+    key = update.callback_query.data.split(":")[2]
+    context.user_data["rc"]["kind"] = key
+    if key == "other":
+        await update.effective_message.reply_text("✍️ اكتب سبب القبض (مثال: رسوم عقد):", reply_markup=CANCEL_KB)
+        return REASON_TEXT
+    if key == "rent":
+        today = today_kw()
+        months = [add_months(today.replace(day=1), delta) for delta in (-1, 0, 1)]
+        buttons = [InlineKeyboardButton(month_label(m), callback_data=f"rc:month:{month_key(m)}") for m in months]
+        await update.effective_message.reply_text("📅 إيجار أي شهر؟", reply_markup=grid(buttons, 3, [CANCEL_BTN]))
+        return MONTH
+    return await _ask_property(update, key)
+
+
+async def month(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    await _clear(update)
+    year, mon = map(int, update.callback_query.data.split(":")[2].split("-"))
+    context.user_data["rc"]["month"] = month_label(date(year, mon, 1))
+    return await _ask_property(update, "rent")
+
+
+async def prop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    data = context.user_data["rc"]
+    if update.callback_query:
+        await _clear(update)
+        value = None
+    else:
+        value = update.message.text.strip()
+        if len(value) > 50:
+            await update.message.reply_text("اختصر اسم العقار (أقل من ٥٠ حرف):", reply_markup=skip_kb("rc:skip"))
+            return PROPERTY
+    data["reason"] = build_reason(data["kind"], value, data.get("month"))
+    return await _ask_payer(update)
+
+
+async def reason_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    text = update.message.text.strip()
+    if len(text) > 80:
+        await update.message.reply_text("السبب طويل، اختصره لأقل من ٨٠ حرف:")
+        return REASON_TEXT
+    context.user_data["rc"]["reason"] = text
+    return await _ask_payer(update)
 
 
 async def payer(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -115,54 +197,27 @@ async def amount(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
         await update.message.reply_text("المبلغ غير صحيح. اكتب رقم فقط (مثال: 350):")
         return AMOUNT
     context.user_data["rc"]["amount_fils"] = fils
-    buttons = [InlineKeyboardButton(label, callback_data=f"rc:reason:{key}") for key, label in reasons().items()]
-    await update.message.reply_text("وذلك عن:", reply_markup=grid(buttons, 2, [CANCEL_BTN]))
-    return REASON
-
-
-async def _ask_method(update: Update) -> int:
-    await update.effective_message.reply_text("طريقة الدفع:", reply_markup=methods_kb("rc:method:", [CANCEL_BTN]))
+    await update.message.reply_text("طريقة الدفع:", reply_markup=methods_kb("rc:method:", [CANCEL_BTN]))
     return METHOD
 
 
-async def reason(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_reply_markup(None)
-    key = query.data.split(":")[2]
-    if key == "other":
-        await query.message.reply_text("اكتب السبب (مثال: إيجار شقة ٥ عن شهرين):", reply_markup=CANCEL_KB)
-        return REASON_TEXT
-    context.user_data["rc"]["reason"] = reasons()[key]
-    return await _ask_method(update)
-
-
-async def reason_text(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    text = update.message.text.strip()
-    if len(text) > 80:
-        await update.message.reply_text("السبب طويل، اختصره لأقل من ٨٠ حرف:")
-        return REASON_TEXT
-    context.user_data["rc"]["reason"] = text
-    return await _ask_method(update)
-
-
 async def method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
-    query = update.callback_query
-    await query.answer()
-    await query.edit_message_reply_markup(None)
-    context.user_data["rc"]["method"] = METHODS[query.data.split(":")[2]]
-    await query.message.reply_text("📝 ملاحظات؟ (مثال: رقم الشيك أو العقار)", reply_markup=skip_kb("rc:skip"))
+    await _clear(update)
+    context.user_data["rc"]["method"] = METHODS[update.callback_query.data.split(":")[2]]
+    await update.effective_message.reply_text(
+        "📝 ملاحظات؟ (مثال: رقم الشيك)", reply_markup=skip_kb("rc:skip")
+    )
     return NOTES
 
 
 async def notes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
     if update.callback_query:
-        await update.callback_query.answer()
-        await update.callback_query.edit_message_reply_markup(None)
+        await _clear(update)
         note = None
     else:
         note = update.message.text.strip()[:120]
     data = context.user_data.pop("rc")
+    data.pop("month", None)
     result = await get_office_member(update, context)
     if result:
         office, member = result
@@ -171,15 +226,18 @@ async def notes(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
 
 
 def build_handler() -> ConversationHandler:
+    skip = r"^rc:skip$"
     return ConversationHandler(
         entry_points=[CommandHandler("receipt", start), MessageHandler(filters.Text([BTN_RECEIPT]), start)],
         states={
+            KIND: [CallbackQueryHandler(kind, pattern=r"^rc:kind:\w+$")],
+            MONTH: [CallbackQueryHandler(month, pattern=r"^rc:month:\d{4}-\d{2}$")],
+            PROPERTY: [MessageHandler(TEXT_INPUT, prop), CallbackQueryHandler(prop, pattern=skip)],
+            REASON_TEXT: [MessageHandler(TEXT_INPUT, reason_text)],
             PAYER: [MessageHandler(TEXT_INPUT, payer)],
             AMOUNT: [MessageHandler(TEXT_INPUT, amount)],
-            REASON: [CallbackQueryHandler(reason, pattern=r"^rc:reason:\w+$")],
-            REASON_TEXT: [MessageHandler(TEXT_INPUT, reason_text)],
             METHOD: [CallbackQueryHandler(method, pattern=r"^rc:method:\w+$")],
-            NOTES: [MessageHandler(TEXT_INPUT, notes), CallbackQueryHandler(notes, pattern=r"^rc:skip$")],
+            NOTES: [MessageHandler(TEXT_INPUT, notes), CallbackQueryHandler(notes, pattern=skip)],
         },
         fallbacks=[
             CallbackQueryHandler(cancel, pattern=r"^cancel$"),

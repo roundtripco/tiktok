@@ -20,7 +20,7 @@ from aqarbot.db import Database
 from aqarbot.handlers.common import BTN_CARD, BTN_OFFICE, BTN_RECEIPT, BTN_TENANTS
 from aqarbot.jobs import send_rent_reminders, send_subscription_notices
 from aqarbot.render import Renderer
-from aqarbot.utils import due_date_in_month, month_key, today_kw
+from aqarbot.utils import add_months, due_date_in_month, month_key, month_label, today_kw
 
 from .fake_telegram import Client, FakeTelegram, texts
 from .scenes import make_images
@@ -129,18 +129,54 @@ async def scenario(data_dir: Path) -> None:
         _save("card-land.jpg", _files(out, "sendPhoto")[0].files["photo"][1])
         assert "على السوم" in texts(out)
 
-        # ---------- سند قبض ----------
-        await agent.send(BTN_RECEIPT)
+        # ---------- سند قبض: عربون، النوع أول سؤال ----------
+        out = await agent.send(BTN_RECEIPT)
+        assert {"rc:kind:rent", "rc:kind:deposit", "rc:kind:sale", "rc:kind:commission"} <= set(out[-1].callback_data())
+        await agent.press("rc:kind:deposit")
+        await agent.send("شقة ٥ - عمارة ١٢ السالمية")
         await agent.send("محمد عبدالله الكندري")
         out = await agent.send("abc")
         assert "غير صحيح" in texts(out)
         await agent.send("٣٥٠٫٥٠٠")
-        await agent.press("rc:reason:deposit")
         await agent.press("rc:method:knet")
-        out = await agent.send("شقة ٥ - عمارة ١٢ السالمية")
+        out = await agent.press("rc:skip")
         docs = _files(out, "sendDocument")
         assert len(docs) == 1 and "سند قبض رقم 0001" in docs[0].text and "350.500 د.ك" in docs[0].text
         _save("receipt.pdf", docs[0].files["document"][1])
+
+        # سند إيجار لشهر محدد، ودفعة بيع بدون عقار، وسبب مكتوب
+        await owner.send(BTN_RECEIPT)
+        out = await owner.press("rc:kind:rent")
+        month_buttons = [d for d in out[-1].callback_data() if d.startswith("rc:month:")]
+        assert len(month_buttons) == 3
+        await owner.press(month_buttons[2])  # الشهر الجاي (دفع مقدّم)
+        await owner.send("عمارة ١٢ - شقة ٨")
+        await owner.send("سارة الفهد")
+        await owner.send("420")
+        await owner.press("rc:method:transfer")
+        await owner.send("تحويل بنك بوبيان")
+        await owner.send(BTN_RECEIPT)
+        await owner.press("rc:kind:sale")
+        await owner.press("rc:skip")
+        await owner.send("خالد")
+        await owner.send("5000")
+        await owner.press("rc:method:cheque")
+        await owner.press("rc:skip")
+        await owner.send(BTN_RECEIPT)
+        await owner.press("rc:kind:other")
+        await owner.send("رسوم عقد")
+        await owner.send("خالد")
+        await owner.send("25")
+        await owner.press("rc:method:cash")
+        await owner.press("rc:skip")
+        rows = database.conn.execute("SELECT kind, reason FROM receipts ORDER BY number").fetchall()
+        next_month = month_label(add_months(today_kw().replace(day=1), 1))
+        assert [tuple(r) for r in rows] == [
+            ("deposit", "عربون عن شقة ٥ - عمارة ١٢ السالمية"),
+            ("rent", f"إيجار عمارة ١٢ - شقة ٨ لشهر {next_month}"),
+            ("sale", "دفعة بيع"),
+            ("other", "رسوم عقد"),
+        ]
 
         # ---------- إلغاء وتبديل وسط محادثة ----------
         await owner.send(BTN_RECEIPT)
@@ -187,7 +223,7 @@ async def scenario(data_dir: Path) -> None:
         await owner.press(f"tn:pay:{ahmed.id}")
         out = await owner.press(f"tn:pm:{ahmed.id}:cash")
         docs = _files(out, "sendDocument")
-        assert len(docs) == 1 and "سند قبض رقم 0002" in docs[0].text
+        assert len(docs) == 1 and "سند قبض رقم 0005" in docs[0].text
         _save("receipt-rent.pdf", docs[0].files["document"][1])
         assert "wa.me/96555112233" in out[-1].urls()[0]
         ahmed = database.get_tenant(ahmed.id, office.id)
@@ -239,7 +275,7 @@ async def scenario(data_dir: Path) -> None:
 
         # ---------- تقرير الإدارة وتنبيهات الاشتراك ----------
         out = await admin.send("/admin")
-        assert "مكتب الديرة العقاري" in texts(out) and "بطاقات 2" in texts(out) and "سندات 2" in texts(out)
+        assert "مكتب الديرة العقاري" in texts(out) and "بطاقات 2" in texts(out) and "سندات 5" in texts(out)
         paid_until = database.get_office(office.id).paid_until
         assert await send_subscription_notices(app.bot, database, cfg, paid_until - timedelta(days=3)) == 1
         assert await send_subscription_notices(app.bot, database, cfg, paid_until - timedelta(days=5)) == 0

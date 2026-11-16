@@ -198,7 +198,7 @@ async def pay_method(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None
         payer=tenant.name, amount_fils=tenant.amount_fils,
         reason=f"إيجار {tenant.unit} لشهر {month_label(month)}",
         method=METHODS[update.callback_query.data.split(":")[3]],
-        tenant_id=tenant.id,
+        tenant_id=tenant.id, kind="rent",
     )
     db(context).mark_tenant_paid(tenant.id, month_key(month))
     await update.effective_message.reply_text(

@@ -146,6 +146,7 @@ class Receipt:
     tenant_id: int | None
     created_by: int
     created_at: datetime
+    kind: str = "other"
 
 
 def _now() -> str:
@@ -162,6 +163,10 @@ class Database:
 
     def _migrate(self) -> None:
         """إضافة الأعمدة الجديدة لقواعد بيانات قديمة."""
+        receipt_cols = {r["name"] for r in self.conn.execute("PRAGMA table_info(receipts)")}
+        if "kind" not in receipt_cols:
+            with self.conn:
+                self.conn.execute("ALTER TABLE receipts ADD COLUMN kind TEXT NOT NULL DEFAULT 'other'")
         cols = {r["name"] for r in self.conn.execute("PRAGMA table_info(activations)")}
         with self.conn:
             if "amount_fils" not in cols:
@@ -427,15 +432,15 @@ class Database:
 
     def create_receipt(
         self, *, office_id: int, payer: str, amount_fils: int, reason: str, method: str,
-        notes: str | None, created_by: int, tenant_id: int | None = None,
+        notes: str | None, created_by: int, tenant_id: int | None = None, kind: str = "other",
     ) -> Receipt:
         with self.conn:
             self.conn.execute("UPDATE offices SET receipt_seq = receipt_seq + 1 WHERE id=?", (office_id,))
             number = self.conn.execute("SELECT receipt_seq FROM offices WHERE id=?", (office_id,)).fetchone()[0]
             cur = self.conn.execute(
                 "INSERT INTO receipts (office_id, number, payer, amount_fils, reason, method, notes, tenant_id,"
-                " created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                (office_id, number, payer, amount_fils, reason, method, notes, tenant_id, created_by, _now()),
+                " created_by, created_at, kind) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                (office_id, number, payer, amount_fils, reason, method, notes, tenant_id, created_by, _now(), kind),
             )
         row = dict(self.conn.execute("SELECT * FROM receipts WHERE id=?", (cur.lastrowid,)).fetchone())
         row["created_at"] = datetime.fromisoformat(row["created_at"])
